@@ -1,0 +1,67 @@
+---
+title: 'Integration Guide'
+description: 'Step-by-step approach to integrating Web SDK into your project'
+icon: 'instalod'
+---
+
+## Step 1: Install Dependencies
+
+Install the SDK.
+
+```bash
+npm install @avaturn/thead-sdk
+```
+
+## Step 2: Initialize
+
+Create an instance of the `AvaturnHead` class and initialize it with optional configuration.  
+You need to pass session token obtained from [this endpoint](ref:create_session_v1_session_create_post) (**it must be used in the backend**).
+
+```typescript
+import { AvaturnHead } from "./AvaturnHead";
+
+const avaturnHead = new AvaturnHead("[session token obtained from backend]");
+await avaturnHead.init();
+```
+
+## Step 3: Handle Media Streams
+
+Once the session is initialized, the `mediaStream` property will contain the media tracks of participants. You can use this stream in your application (e.g., attaching it to a video element).
+
+```typescript
+const videoElement = document.querySelector("video");
+videoElement.srcObject = avaturnHead.mediaStream;
+```
+
+## Step 4: Send Tasks
+
+Use the `task` method to send speech requests. If the avatar is already speaking, the text fragment is queued to be spoken at a later time. Nothing is said while you're disconnected.
+
+```typescript
+const response = await avaturnHead.task("Some text to say");
+console.log(response);
+```
+
+## Step 5: Subscribe to Events
+
+Register event listeners to handle specific events during the session.
+
+```typescript
+avaturnHead.on("avatar_started_speaking", (data) => {
+  console.log("Avatar started speaking:", data);
+});
+```
+
+If you no longer need to listen to an event, you can remove the event listener.
+
+```typescript
+avaturnHead.off("avatar_started_speaking", callback);
+```
+
+## Step 6: Dispose
+
+When you are done with the session, make sure to call the `dispose` method to clean up resources.
+
+```typescript
+avaturnHead.dispose();
+```

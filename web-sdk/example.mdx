@@ -1,0 +1,52 @@
+---
+title: 'Example'
+description: 'Overview of the demo, its purpose, functionality, and how it works.'
+icon: 'code'
+---
+
+## Overview
+
+The [demo](https://github.com/avaturn/thead-example) integrates OpenAI's API with the Avaturn.Live SDK, allowing users to interact with an AI-powered avatar through a chat interface. The demo allows users to submit text inputs that either trigger an echo response from the avatar or connect to OpenAI's GPT-4 model for more advanced interactions.
+
+The demo consists of a few key components:
+
+1. **[OpenAI Hook](https://github.com/avaturn/thead-example/blob/main/src/hooks/use-openai.hook.tsx)**: A custom hook that manages the connection and communication with OpenAI's API.
+2. **[TokenPopup](https://github.com/avaturn/thead-example/blob/main/src/components/token-popup.tsx)**: A popup modal for entering and submitting the OpenAI API token.
+3. **[SettingsForm](https://github.com/avaturn/thead-example/blob/main/src/components/settings-form.tsx)**: A form that allows users to select a session mode (Echo/OpenAI) and provide the necessary API keys.
+4. **[Home Component](https://github.com/avaturn/thead-example/blob/main/src/pages/index.tsx)**: The main interface that displays the video feed and input form for interacting with the avatar.
+
+## Details
+
+### 1. **OpenAI Hook**
+
+The `useOpenAI` hook manages the initialization and communication with OpenAI's API.
+
+1. The hook initializes the OpenAI client using the provided token.
+2. It streams the response from OpenAI, breaking it into segments for real-time updates.
+3. The response is passed back to the caller via a callback function.
+
+### 2. **TokenPopup Component**
+
+The `TokenPopup` component displays a modal where users can enter their OpenAI API token. This token is used to authenticate requests to the OpenAI API.
+
+1. The `TokenPopup` component maintains a local state to track whether the popup is open or closed.
+2. Users input their token in a text field.
+3. On form submission, the token is validated and sent to the parent component via the `onSubmit` prop.
+
+### 3. **SettingsForm Component**
+
+The `SettingsForm` component allows users to configure the session mode and provide necessary API keys.
+
+1. The component manages local state for `apiKey`, `gptKey`, and `mode`.
+2. Users select a mode and input the necessary keys.
+3. The form validates the input, ensuring that all required fields are filled.
+4. Upon submission, the settings are passed back to the parent component.
+
+### 4. **Home Component**
+
+The `Home` component is the main user interface, displaying the video feed of the avatar and an input form for user interaction.
+
+1. The component initializes the avatar using the Avaturn.Live SDK.
+2. It displays a video feed and a form for user input.
+3. Users type a message, which is either echoed by the avatar or sent to OpenAI for processing.
+4. The response is displayed in real-time through the avatar.

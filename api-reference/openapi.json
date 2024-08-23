@@ -1,195 +1,240 @@
 {
-  "openapi": "3.0.1",
-  "info": {
-    "title": "OpenAPI Plant Store",
-    "description": "A sample API that uses a plant store as an example to demonstrate features in the OpenAPI specification",
-    "license": {
-      "name": "MIT"
+    "openapi": "3.1.0",
+    "info": {
+        "title": "API",
+        "version": "0.1.0"
     },
-    "version": "1.0.0"
-  },
-  "servers": [
-    {
-      "url": "http://sandbox.mintlify.com"
-    }
-  ],
-  "security": [
-    {
-      "bearerAuth": []
-    }
-  ],
-  "paths": {
-    "/plants": {
-      "get": {
-        "description": "Returns all plants from the system that the user has access to",
-        "parameters": [
-          {
-            "name": "limit",
-            "in": "query",
-            "description": "The maximum number of results to return",
-            "schema": {
-              "type": "integer",
-              "format": "int32"
+    "paths": {
+        "/api/v1/sessions": {
+            "post": {
+                "summary": "Create Session",
+                "description": "Initiates a session.\n\n<Warning>\n  Call this endpoint from your backend.\n  You must not expose your API Key in your frontend code.\n</Warning>\n\nUpon successful creation, the API returns a session token that can be safely used in Web SDK.",
+                "operationId": "create_session_api_v1_sessions_post",
+                "responses": {
+                    "200": {
+                        "description": "Successful Response",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/_CreateSessionResponse"
+                                }
+                            }
+                        }
+                    }
+                },
+                "security": [
+                    {
+                        "HTTPBearer": []
+                    }
+                ]
             }
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "Plant response",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "type": "array",
-                  "items": {
-                    "$ref": "#/components/schemas/Plant"
-                  }
-                }
-              }
-            }
-          },
-          "400": {
-            "description": "Unexpected error",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/Error"
-                }
-              }
-            }
-          }
-        }
-      },
-      "post": {
-        "description": "Creates a new plant in the store",
-        "requestBody": {
-          "description": "Plant to add to the store",
-          "content": {
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/NewPlant"
-              }
-            }
-          },
-          "required": true
         },
-        "responses": {
-          "200": {
-            "description": "plant response",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/Plant"
+        "/api/v1/sessions/{id}/tasks": {
+            "post": {
+                "summary": "Create Speech Task",
+                "description": "Adds the text to the avatar speech queue.\nIf the avatar is already speaking, the text fragment is queued to be spoken at a later time.\nNothing is said until you connect or while you're disconnected.",
+                "operationId": "append_text_api_v1_sessions__id__tasks_post",
+                "security": [
+                    {
+                        "HTTPBearer": []
+                    }
+                ],
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "string",
+                            "title": "id",
+                            "description": "Session ID"
+                        },
+                        "description": "Session ID"
+                    }
+                ],
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "$ref": "#/components/schemas/Body_append_text_api_v1_sessions__id__tasks_post"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "Successful Response",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/_SessionSayResponse"
+                                }
+                            }
+                        }
+                    },
+                    "422": {
+                        "description": "Validation Error",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/HTTPValidationError"
+                                }
+                            }
+                        }
+                    }
                 }
-              }
             }
-          },
-          "400": {
-            "description": "unexpected error",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/Error"
+        },
+        "/api/v1/sessions/{id}": {
+            "delete": {
+                "summary": "Terminate Session",
+                "description": "Terminates the session.\nIf the avatar is still talking, it kills the session anyway.",
+                "operationId": "delete_session_api_v1_sessions__id__delete",
+                "security": [
+                    {
+                        "HTTPBearer": []
+                    }
+                ],
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "string",
+                            "title": "id",
+                            "description": "Session ID"
+                        },
+                        "description": "Session ID"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Successful Response",
+                        "content": {
+                            "application/json": {
+                                "schema": {}
+                            }
+                        }
+                    },
+                    "422": {
+                        "description": "Validation Error",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/HTTPValidationError"
+                                }
+                            }
+                        }
+                    }
                 }
-              }
             }
-          }
         }
-      }
     },
-    "/plants/{id}": {
-      "delete": {
-        "description": "Deletes a single plant based on the ID supplied",
-        "parameters": [
-          {
-            "name": "id",
-            "in": "path",
-            "description": "ID of plant to delete",
-            "required": true,
-            "schema": {
-              "type": "integer",
-              "format": "int64"
+    "components": {
+        "schemas": {
+            "Body_append_text_api_v1_sessions__id__tasks_post": {
+                "properties": {
+                    "text": {
+                        "type": "string",
+                        "title": "Text",
+                        "description": "Text to say"
+                    }
+                },
+                "type": "object",
+                "required": [
+                    "text"
+                ],
+                "title": "Body_append_text_api_v1_sessions__id__tasks_post"
+            },
+            "HTTPValidationError": {
+                "properties": {
+                    "detail": {
+                        "items": {
+                            "$ref": "#/components/schemas/ValidationError"
+                        },
+                        "type": "array",
+                        "title": "Detail"
+                    }
+                },
+                "type": "object",
+                "title": "HTTPValidationError"
+            },
+            "ValidationError": {
+                "properties": {
+                    "loc": {
+                        "items": {
+                            "anyOf": [
+                                {
+                                    "type": "string"
+                                },
+                                {
+                                    "type": "integer"
+                                }
+                            ]
+                        },
+                        "type": "array",
+                        "title": "Location"
+                    },
+                    "msg": {
+                        "type": "string",
+                        "title": "Message"
+                    },
+                    "type": {
+                        "type": "string",
+                        "title": "Error Type"
+                    }
+                },
+                "type": "object",
+                "required": [
+                    "loc",
+                    "msg",
+                    "type"
+                ],
+                "title": "ValidationError"
+            },
+            "_CreateSessionResponse": {
+                "properties": {
+                    "session_id": {
+                        "type": "string",
+                        "title": "Session Id",
+                        "description": "Session ID"
+                    },
+                    "token": {
+                        "type": "string",
+                        "title": "Token",
+                        "description": "Session token for Web SDK"
+                    }
+                },
+                "type": "object",
+                "required": [
+                    "session_id",
+                    "token"
+                ],
+                "title": "_CreateSessionResponse"
+            },
+            "_SessionSayResponse": {
+                "properties": {
+                    "task_id": {
+                        "type": "string",
+                        "title": "Task Id",
+                        "description": "Speech task ID"
+                    }
+                },
+                "type": "object",
+                "required": [
+                    "task_id"
+                ],
+                "title": "_SessionSayResponse"
             }
-          }
-        ],
-        "responses": {
-          "204": {
-            "description": "Plant deleted",
-            "content": {}
-          },
-          "400": {
-            "description": "unexpected error",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/Error"
-                }
-              }
+        },
+        "securitySchemes": {
+            "HTTPBearer": {
+                "type": "http",
+                "description": "Project developer API token",
+                "scheme": "bearer"
             }
-          }
         }
-      }
     }
-  },
-  "components": {
-    "schemas": {
-      "Plant": {
-        "required": [
-          "name"
-        ],
-        "type": "object",
-        "properties": {
-          "name": {
-            "description": "The name of the plant",
-            "type": "string"
-          },
-          "tag": {
-            "description": "Tag to specify the type",
-            "type": "string"
-          }
-        }
-      },
-      "NewPlant": {
-        "allOf": [
-          {
-            "$ref": "#/components/schemas/Plant"
-          },
-          {
-            "required": [
-              "id"
-            ],
-            "type": "object",
-            "properties": {
-              "id": {
-                "description": "Identification number of the plant",
-                "type": "integer",
-                "format": "int64"
-              }
-            }
-          }
-        ]
-      },
-      "Error": {
-        "required": [
-          "error",
-          "message"
-        ],
-        "type": "object",
-        "properties": {
-          "error": {
-            "type": "integer",
-            "format": "int32"
-          },
-          "message": {
-            "type": "string"
-          }
-        }
-      }
-    },
-    "securitySchemes": {
-      "bearerAuth": {
-        "type": "http",
-        "scheme": "bearer"
-      }
-    }
-  }
 }
