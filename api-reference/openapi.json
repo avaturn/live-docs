@@ -4,6 +4,7 @@
         "title": "API",
         "version": "0.1.0"
     },
+    "servers": ["https://api.avaturn.live"],
     "paths": {
         "/api/v1/sessions": {
             "post": {
