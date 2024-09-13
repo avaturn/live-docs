@@ -26,11 +26,11 @@ await avatar.init()
 Your authorization [session token](/api-reference/endpoint/create-session)
 </ParamField>
 
-<ParamField path="apiHost" type="string">
+<ParamField path="apiHost" type="string" default="https://api.avaturn.live">
 Parameter for overriding the default api host. In most cases, it should not be used.
 </ParamField>
 
-<ParamField path="preloadBundle" type="boolean">
+<ParamField path="preloadBundle" type="boolean" default="false">
 The `preloadBundle` parameter controls the preloading of the JavaScript bundle required for the SDK to function properly.
 
 **Why is this important?**
@@ -46,7 +46,7 @@ When preloading is enabled (`preloadBundle: true`), the SDK automatically loads 
 - In scenarios where you want to manage resource loading manually.
 </ParamField>
 
-<ParamField path="preconnect" type="boolean">
+<ParamField path="preconnect" type="boolean" default="false">
 The `preconnect` parameter controls the preconnection of the avatar to the stream before the session has been fully initialized.
 
 **Why is this important?**
@@ -62,7 +62,7 @@ When preconnection is enabled (`preconnect: true`), the SDK preemptively connect
 - If you prefer to manage the connection process manually.
 </ParamField>
 
-<ParamField path="keepAlive" type="boolean">
+<ParamField path="keepAlive" type="boolean" default="false">
 The `keepAlive` parameter controls whether the connection to the stream will be maintained if there is no interaction with the avatar for five minutes.
 
 **Why is this important?**
