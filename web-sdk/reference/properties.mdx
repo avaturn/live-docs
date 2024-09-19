@@ -1,0 +1,81 @@
+---
+title: 'Properties'
+description: 'You can pass a properties object that configures the AvaturnHead object.'
+icon: 'file-code'
+---
+
+### Configure the AvaturnHead
+
+```typescript
+import { AvaturnHead } from "@avaturn-live/web-sdk";
+
+const avatar = new AvaturnHead({
+  apiHost: "https://api.avaturn.live",
+  sessionToken: "<YOUR_SESSION_TOKEN>",
+  preloadBundle: false,
+  preconnect: false,
+  keepAlive: false,
+});
+
+await avatar.init()
+```
+
+### Properties
+
+<ParamField path="sessionToken" type="string" required>
+Your authorization [session token](/api-reference/endpoint/create-session)
+</ParamField>
+
+<ParamField path="apiHost" type="string" default="https://api.avaturn.live">
+Parameter for overriding the default api host. In most cases, it should not be used.
+</ParamField>
+
+<ParamField path="preloadBundle" type="boolean" default="false">
+The `preloadBundle` parameter controls the preloading of the JavaScript bundle required for the SDK to function properly.
+
+**Why is this important?**
+
+When preloading is enabled (`preloadBundle: true`), the SDK automatically loads and caches all necessary resources (JavaScript bundle) before they are actually needed. This reduces the delay during the first interaction with the SDK, improving performance and providing a smoother user experience.
+
+**When should you use preloading?**
+- If your application requires quick, responsive performance when first using the SDK.
+- In cases where you want to minimize delays caused by dynamically loading resources.
+
+**When might you not need preloading?**
+- If your application is not sensitive to initial delays when the SDK is first used.
+- In scenarios where you want to manage resource loading manually.
+</ParamField>
+
+<ParamField path="preconnect" type="boolean" default="false">
+The `preconnect` parameter controls the preconnection of the avatar to the stream before the session has been fully initialized.
+
+**Why is this important?**
+
+When preconnection is enabled (`preconnect: true`), the SDK preemptively connects the avatar to the stream even if the session has not been fully initialized yet. This reduces the delay in establishing a connection with the server, which is particularly useful for scenarios where the avatar needs to be ready for interaction with minimal latency.
+
+**When should you use preconnection?**
+- If it’s important for the avatar to be ready for user interaction with minimal delay after the session starts.
+- In situations where you want to speed up the connection to the stream.
+
+**When might you not need preconnection?**
+- If your application is not sensitive to the delay when connecting the avatar to the stream.
+- If you prefer to manage the connection process manually.
+</ParamField>
+
+<ParamField path="keepAlive" type="boolean" default="false">
+The `keepAlive` parameter controls whether the connection to the stream will be maintained if there is no interaction with the avatar for five minutes.
+
+**Why is this important?**
+
+When the `keepAlive` flag is set to `true`, the SDK keeps the stream connection active even if there has been no interaction with the avatar for five minutes. This is useful in scenarios where you need the stream to remain active despite temporary inactivity.
+
+If `keepAlive` is set to `false`, the SDK will automatically disconnect the stream after five minutes of inactivity, helping to conserve resources.
+
+**When should you use keepAlive?**
+- If you need the stream to remain active regardless of temporary user inactivity.
+- In cases where reconnecting takes time and instant readiness is important.
+
+**When might you not need keepAlive?**
+- If you want to automatically free up resources when there is no interaction with the avatar.
+- If reconnecting to the stream is not critical for your application.
+</ParamField>

@@ -1,0 +1,77 @@
+---
+title: 'Events'
+description: 'You can pass a properties object that configures the AvaturnHead object.'
+icon: 'atom'
+---
+
+The SDK provides various events related to the avatar's operations, allowing you to track its state and actions. You can use these events with the `on()` and `off()` methods to subscribe to and manage interactions with the avatar.
+
+#### Avatar speech events
+
+These events track the start and end of the avatar's speech, as well as specific phrases it speaks.
+
+- **`avatar_started_speaking`**  
+  This event is triggered when the avatar begins speaking.  
+
+- **`avatar_ended_speaking`**  
+  This event is triggered when the avatar finishes speaking.  
+
+- **`avatar_started_speaking_phrase`**  
+  This event is triggered when the avatar starts speaking a specific phrase.  
+  **Callback data**:  
+  ```javascript
+  {
+    phrase_id: string;  // Unique identifier of the phrase
+    type: "avatar_started_speaking_phrase";
+  }
+  ```
+
+- **`avatar_ended_speaking_phrase`**  
+  This event is triggered when the avatar finishes speaking a phrase.  
+  **Callback data**:  
+  ```javascript
+  {
+    phrase_id: string;  // Unique identifier of the phrase
+    type: "avatar_ended_speaking_phrase";
+  }
+  ```
+
+#### SDK events
+
+These events manage the session state and avatar activity.
+
+- **`init`**  
+  Triggered when the avatar is initialized and the session is successfully started.  
+  Does not pass additional data to the callback.
+
+- **`task`**  
+  Triggered when the avatar starts performing a task, such as speaking text via the [task()](/web-sdk/reference/methods#task) method.  
+  Does not pass additional data to the callback.
+
+- **`dispose`**  
+  Triggered when the avatar session ends or the avatar is disposed of.  
+  Does not pass additional data to the callback.
+
+- **`idle`**  
+  Triggered when the avatar goes into an idle or inactive state.  
+  Does not pass additional data to the callback.
+
+---
+
+### Example Usage
+
+Here’s an example of using the events with `on()` and `off()` methods:
+
+```javascript
+function handlePhraseEnd(data) {
+  console.log('Avatar ended phrase with ID:', data.phrase_id);
+}
+
+sdk.on('avatar_ended_speaking_phrase', handlePhraseEnd);
+
+// additional code...
+
+sdk.off('avatar_ended_speaking_phrase', handlePhraseEnd);
+```
+
+---

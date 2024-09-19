@@ -48,6 +48,15 @@
     {
       "group": "Web SDK",
       "pages": [
+        {
+          "group": "SDK Reference",
+          "icon": "asterisk",
+          "pages": [
+            "web-sdk/reference/properties",
+            "web-sdk/reference/methods",
+            "web-sdk/reference/events"
+          ]
+        },
         "web-sdk/integration-guide",
         "web-sdk/example"
       ]
