@@ -1,0 +1,8 @@
+---
+title: LLM integration
+description: 'General guidelines on how to integrate with LLMs'
+---
+
+1. Use streaming endpoint of the LLM of your choice.
+2. Split text stream into stream of sentences. Similar approach is described [here](https://elevenlabs.io/docs/api-reference/websockets#example-voice-streaming-using-elevenlabs-and-openai).
+3. Send the sentences one by one to Avaturn.Live [endpoint](/api-reference/endpoint/request-speech).

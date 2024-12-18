@@ -6,27 +6,37 @@
     },
     "servers": [
         {
-            "url": "https://api.avaturn.live"
+            "url": "http://localhost:8081"
         }
     ],
     "paths": {
         "/api/v1/sessions": {
             "post": {
                 "summary": "Create Session",
-                "description": "Initiates a session.\n\n<Warning>\n  Call this endpoint from your backend.\n  You must not expose your API Key in your frontend code.\n</Warning>\n\nUpon successful creation, the API returns a session token that can be safely used in Web SDK.",
-                "operationId": "create_session_api_v1_sessions_post",
+                "description": "Initiates a session.\n\n<Warning>\n  Call this endpoint from your backend.\n  You must not expose your API Key in your frontend code.\n</Warning>\n\nUpon successful creation, the API returns a session token that can be safely used in Web SDK.\n\nThere a few ways to process what user says and what avatar says.\nIt's configured via the conversation engine.\nCurrently, only text-based echo conversation engine is supported.\nReach out to us if you want to use OpenAI Realtime API-based engine.",
+                "operationId": "post_create_session_api_v1_sessions_post",
                 "requestBody": {
                     "content": {
                         "application/json": {
                             "schema": {
-                                "allOf": [
-                                    {
-                                        "$ref": "#/components/schemas/SessionConfig"
-                                    }
-                                ],
-                                "title": "Config",
+                                "$ref": "#/components/schemas/CreateSessionConfig",
                                 "default": {
                                     "avatar_id": "jane_20240829"
+                                }
+                            },
+                            "examples": {
+                                "text-echo-elevenlabs": {
+                                    "summary": "Text-Echo engine with elevenlabs TTS",
+                                    "value": {
+                                        "avatar_id": "jane_20240829",
+                                        "conversation_engine": {
+                                            "type": "text-echo",
+                                            "tts": {
+                                                "engine": "elevenlabs",
+                                                "voice_id": "<voice-id-here>"
+                                            }
+                                        }
+                                    }
                                 }
                             }
                         }
@@ -38,7 +48,7 @@
                         "content": {
                             "application/json": {
                                 "schema": {
-                                    "$ref": "#/components/schemas/_CreateSessionResponse"
+                                    "$ref": "#/components/schemas/CreateSessionResponse"
                                 }
                             }
                         }
@@ -100,7 +110,7 @@
                         "content": {
                             "application/json": {
                                 "schema": {
-                                    "$ref": "#/components/schemas/_SessionSayResponse"
+                                    "$ref": "#/components/schemas/SessionSayResponse"
                                 }
                             }
                         }
@@ -180,6 +190,61 @@
                 ],
                 "title": "Body_append_text_api_v1_sessions__id__tasks_post"
             },
+            "CreateSessionConfig": {
+                "properties": {
+                    "avatar_id": {
+                        "type": "string",
+                        "title": "Avatar Id",
+                        "description": "Avatar ID",
+                        "default": "jane_20240829"
+                    },
+                    "conversation_engine": {
+                        "anyOf": [
+                            {
+                                "oneOf": [
+                                    {
+                                        "$ref": "#/components/schemas/TextEchoConversationEngineConfig"
+                                    }
+                                ],
+                                "discriminator": {
+                                    "propertyName": "type",
+                                    "mapping": {
+                                        "text-echo": "#/components/schemas/TextEchoConversationEngineConfig"
+                                    }
+                                }
+                            },
+                            {
+                                "type": "null"
+                            }
+                        ],
+                        "title": "Conversation Engine",
+                        "description": "Configures how avatar listens and responds"
+                    }
+                },
+                "additionalProperties": true,
+                "type": "object",
+                "title": "CreateSessionConfig"
+            },
+            "CreateSessionResponse": {
+                "properties": {
+                    "session_id": {
+                        "type": "string",
+                        "title": "Session Id",
+                        "description": "Session ID"
+                    },
+                    "token": {
+                        "type": "string",
+                        "title": "Token",
+                        "description": "Session token for Web SDK"
+                    }
+                },
+                "type": "object",
+                "required": [
+                    "session_id",
+                    "token"
+                ],
+                "title": "CreateSessionResponse"
+            },
             "HTTPValidationError": {
                 "properties": {
                     "detail": {
@@ -193,17 +258,62 @@
                 "type": "object",
                 "title": "HTTPValidationError"
             },
-            "SessionConfig": {
+            "SessionSayResponse": {
                 "properties": {
-                    "avatar_id": {
+                    "task_id": {
                         "type": "string",
-                        "title": "Avatar Id",
-                        "description": "Avatar ID",
-                        "default": "jane_20240829"
+                        "title": "Task Id",
+                        "description": "Speech task ID"
                     }
                 },
                 "type": "object",
-                "title": "SessionConfig"
+                "required": [
+                    "task_id"
+                ],
+                "title": "SessionSayResponse"
+            },
+            "TTSConfig": {
+                "properties": {
+                    "engine": {
+                        "type": "string",
+                        "enum": [
+                            "elevenlabs",
+                            "google"
+                        ],
+                        "title": "Engine",
+                        "default": "elevenlabs"
+                    },
+                    "voice_id": {
+                        "type": "string",
+                        "title": "Voice Id",
+                        "description": "ID of the voice from the dashboard"
+                    }
+                },
+                "type": "object",
+                "required": [
+                    "voice_id"
+                ],
+                "title": "TTSConfig",
+                "description": "Configures text-to-speech synthesis."
+            },
+            "TextEchoConversationEngineConfig": {
+                "properties": {
+                    "type": {
+                        "type": "string",
+                        "const": "text-echo",
+                        "title": "Type",
+                        "default": "text-echo"
+                    },
+                    "tts": {
+                        "$ref": "#/components/schemas/TTSConfig"
+                    }
+                },
+                "type": "object",
+                "required": [
+                    "tts"
+                ],
+                "title": "TextEchoEngineConfig",
+                "description": "Text-based echo conversation engine.\n\nAllows to control what avatar says with text. The text is converted into audio using TTS engine.\nMultiple TTS engines are supported."
             },
             "ValidationError": {
                 "properties": {
@@ -237,40 +347,6 @@
                     "type"
                 ],
                 "title": "ValidationError"
-            },
-            "_CreateSessionResponse": {
-                "properties": {
-                    "session_id": {
-                        "type": "string",
-                        "title": "Session Id",
-                        "description": "Session ID"
-                    },
-                    "token": {
-                        "type": "string",
-                        "title": "Token",
-                        "description": "Session token for Web SDK"
-                    }
-                },
-                "type": "object",
-                "required": [
-                    "session_id",
-                    "token"
-                ],
-                "title": "_CreateSessionResponse"
-            },
-            "_SessionSayResponse": {
-                "properties": {
-                    "task_id": {
-                        "type": "string",
-                        "title": "Task Id",
-                        "description": "Speech task ID"
-                    }
-                },
-                "type": "object",
-                "required": [
-                    "task_id"
-                ],
-                "title": "_SessionSayResponse"
             }
         },
         "securitySchemes": {
