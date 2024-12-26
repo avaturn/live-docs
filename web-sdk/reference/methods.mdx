@@ -48,6 +48,19 @@ avatar.task('Hello, how can I assist you today?');
 ```
 ---
 
+## `cancelAllTasks()`
+The `cancelAllTasks()` method cancels the currently active task and clears the queue of all pending tasks.
+
+**When should you use `cancelAllTasks()`?**
+- When you need the avatar to immediately stop speaking or processing any ongoing tasks
+- In cases where you need to remove all tasks waiting in the queue.
+
+**Example usage**:
+```javascript
+avatar.cancelAllTasks();
+```
+---
+
 ## `on()`
 
 

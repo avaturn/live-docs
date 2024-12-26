@@ -9,7 +9,7 @@ icon: 'file-code'
 ```typescript
 import { AvaturnHead } from "@avaturn-live/web-sdk";
 
-const avatar = new AvaturnHead({
+const avatar = new AvaturnHead(domElement, {
   apiHost: "https://api.avaturn.live",
   sessionToken: "<YOUR_SESSION_TOKEN>",
   preloadBundle: false,
@@ -21,6 +21,10 @@ await avatar.init()
 ```
 
 ### Properties
+
+<ParamField path="domElement" type="HTMLElement">
+Reference to the DOM element where you want to place the video
+</ParamField>
 
 <ParamField path="sessionToken" type="string" required>
 Your authorization [session token](/api-reference/endpoint/create-session)

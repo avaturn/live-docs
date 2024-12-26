@@ -14,26 +14,21 @@ npm install @avaturn-live/web-sdk
 
 ## Step 2: Initialize
 
-Create an instance of the `AvaturnHead` class and initialize it with optional configuration.  
-You need to pass session token obtained from [this endpoint](ref:create_session_v1_session_create_post) (**it must be used in the backend**).
+Create an instance of the `AvaturnHead` class and initialize it with an optional configuration.  
+You need to pass a session token obtained from [this endpoint](ref:create_session_v1_session_create_post) (**it must be used in the backend**).  
+
+Make sure to correctly pass a reference to the DOM element (`domElement`) depending on your framework (e.g., use `ref` in React or Vue, `@ViewChild` in Angular, etc.).
 
 ```typescript
 import { AvaturnHead } from "./AvaturnHead";
 
-const avaturnHead = new AvaturnHead("[session token obtained from backend]");
+const domElement = document.querySelector("#avaturn-video");
+
+const avaturnHead = new AvaturnHead(domElement, { sessionToken: "[session token obtained from backend]" });
 await avaturnHead.init();
 ```
 
-## Step 3: Handle Media Streams
-
-Once the session is initialized, the `mediaStream` property will contain the media tracks of participants. You can use this stream in your application (e.g., attaching it to a video element).
-
-```typescript
-const videoElement = document.querySelector("video");
-videoElement.srcObject = avaturnHead.mediaStream;
-```
-
-## Step 4: Send Tasks
+## Step 3: Send Tasks
 
 Use the `task` method to send speech requests. If the avatar is already speaking, the text fragment is queued to be spoken at a later time. Nothing is said while you're disconnected.
 
@@ -42,7 +37,7 @@ const response = await avaturnHead.task("Some text to say");
 console.log(response);
 ```
 
-## Step 5: Subscribe to Events
+## Step 4: Subscribe to Events
 
 Register event listeners to handle specific events during the session.
 
