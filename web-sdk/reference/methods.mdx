@@ -61,6 +61,27 @@ avatar.cancelAllTasks();
 ```
 ---
 
+## `attachDOMNode()`
+
+The `attachDOMNode()` method updates the HTML DOM element where the avatar is rendered. This allows you to dynamically change the rendering container without restarting or reinitializing the avatar.
+
+**When should you use `attachDOMNode()`?**
+- When you need to move the avatar to a different section of the page.
+- In cases where the current DOM element is no longer suitable for rendering (e.g., it is removed or hidden).
+
+**Arguments:**
+<ParamField path="node" type="HTMLElement" required>
+The new HTML element where the avatar should be rendered.
+</ParamField>
+
+**Example usage**:
+```javascript
+// Assume `avatar` is your SDK instance and `newContainer` is a valid HTML element
+const newContainer = document.getElementById('avatar-container');
+avatar.attachDOMNode(newContainer);
+```
+---
+
 ## `on()`
 
 
