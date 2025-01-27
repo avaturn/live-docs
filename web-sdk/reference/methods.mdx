@@ -61,6 +61,18 @@ avatar.cancelAllTasks();
 ```
 ---
 
+# `changeVoice()`
+The `changeVoice()` method cancels all tasks and changes voice for subsequent tasks.
+
+**When should you use `changeVoice()`?**
+- Use this method when you need the avatar to immediately stop speaking and switch to a different voice for subsequent tasks.
+
+**Example usage**:
+```javascript
+avatar.changeVoice({ engine: 'elevenlabs', voice_id: 'different_voice_id' });
+```
+---
+
 ## `attachDOMNode()`
 
 The `attachDOMNode()` method updates the HTML DOM element where the avatar is rendered. This allows you to dynamically change the rendering container without restarting or reinitializing the avatar.
