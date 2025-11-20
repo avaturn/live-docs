@@ -1,0 +1,496 @@
+---
+title: "OpenAI Realtime Conversation Engine"
+description: "Real-time bidirectional audio conversations powered by OpenAI Realtime API"
+---
+
+## Overview
+
+The OpenAI Realtime conversation engine enables natural, low-latency voice conversations between users and avatars. Unlike text-based conversation engines, it handles both speech-to-text and text-to-speech natively through OpenAI's Realtime API, providing a seamless conversational experience.
+
+### Key Features
+
+- **Bidirectional Audio**: Users can speak directly to the avatar and receive spoken responses
+- **Natural Interruptions**: Users can interrupt the avatar mid-sentence, just like in real conversations
+- **Low Latency**: Minimal delay between user speech and avatar response
+- **Built-in Speech Processing**: No separate TTS/STT configuration needed
+
+### When to Use
+
+Use the OpenAI Realtime engine when you need:
+- Natural, conversational interactions with interruption support
+- Real-time voice-to-voice communication
+- Low-latency responses for interactive experiences
+
+For scripted content with precise timing control, consider using the text-echo conversation engine instead.
+
+## Prerequisites
+
+<Note>
+Before getting started, ensure you have:
+- An **OpenAI API key** with access to the Realtime API
+- An **Avaturn API key** for creating sessions
+- Familiarity with [OpenAI's Realtime API](https://platform.openai.com/docs/guides/realtime) basics
+</Note>
+
+## How It Works
+
+<Steps>
+  <Step title="Create OpenAI Client Secret">
+    Your backend creates an ephemeral client secret from OpenAI's API
+  </Step>
+
+  <Step title="Create Avaturn Session">
+    Your backend creates an Avaturn session configured with the OpenAI Realtime conversation engine, passing the ephemeral client secret
+  </Step>
+
+  <Step title="Connect with Web SDK">
+    Your frontend uses the [Avaturn Web SDK](https://docs.avaturn.live/web-sdk/) to initialize and connect to the session
+  </Step>
+</Steps>
+
+### Architecture Overview
+
+```mermaid
+sequenceDiagram
+    participant WebApp as Web App
+    participant DevBackend as Developer Backend
+    participant AvaturnAPI as Avaturn API
+    participant OpenAI as OpenAI API
+
+    DevBackend->>OpenAI: 1. Create ephemeral client secret
+    OpenAI-->>DevBackend: Return client secret (sess_xxx)
+
+    DevBackend->>AvaturnAPI: 2. Create session with client secret
+    AvaturnAPI-->>DevBackend: Return session_id & token
+
+    DevBackend-->>WebApp: 3. Pass session token
+
+    WebApp->>AvaturnAPI: 4. Connect via Web SDK
+    AvaturnAPI-->>WebApp: Establish WebRTC connection
+
+    rect rgb(240, 248, 255)
+        Note over WebApp,OpenAI: Real-time Conversation
+        WebApp->>AvaturnAPI: User speaks (audio)
+        AvaturnAPI->>OpenAI: Forward audio via Realtime API
+        OpenAI-->>AvaturnAPI: AI response (audio)
+        AvaturnAPI-->>WebApp: Avatar video + audio
+    end
+```
+
+## Creating OpenAI Client Secrets
+
+OpenAI's Realtime API uses **ephemeral client secrets** for secure, temporary access. These secrets are created server-side and passed to Avaturn when creating a session.
+
+<Warning>
+**Never expose your OpenAI API key to the frontend.** Always create ephemeral client secrets on your backend server.
+</Warning>
+
+### Code Examples
+
+<CodeGroup>
+
+```python Python
+from openai import AsyncOpenAI
+
+# Initialize OpenAI client with your API key
+client = AsyncOpenAI(api_key="your-openai-api-key")
+
+# Create an ephemeral client secret
+session = await client.realtime.client_secrets.create(
+    expires_after={"seconds": 7200, "anchor": "created_at"},
+    session={"type": "realtime", "model": "gpt-realtime"}
+)
+
+# Use session.value as the client_secret
+client_secret = session.value
+```
+
+```javascript JavaScript/Node.js
+import OpenAI from 'openai';
+
+// Initialize OpenAI client with your API key
+const client = new OpenAI({
+  apiKey: 'your-openai-api-key',
+});
+
+// Create an ephemeral client secret
+const session = await client.realtime.client_secrets.create({
+  expires_after: { seconds: 7200, anchor: 'created_at' },
+  session: { type: 'realtime', model: 'gpt-realtime' },
+});
+
+// Use session.value as the client_secret
+const clientSecret = session.value;
+```
+
+```bash cURL
+curl https://api.openai.com/v1/realtime/client_secrets \
+  -H "Authorization: Bearer YOUR_OPENAI_API_KEY" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "expires_after": {
+      "seconds": 7200,
+      "anchor": "created_at"
+    },
+    "session": {
+      "type": "realtime",
+      "model": "gpt-realtime"
+    }
+  }'
+```
+
+</CodeGroup>
+
+### Customizing Session Configuration
+
+When creating an ephemeral client secret, you can customize the OpenAI Realtime session by configuring prompts, tools, voice settings, and more. Avaturn passes this configuration through to OpenAI.
+
+<Info>
+You have full control over the OpenAI session configuration. Configure instructions, tools, voice, temperature, and other parameters when creating the ephemeral client secret.
+</Info>
+
+#### Available Configuration Options
+
+- **`instructions`** - Custom system prompts to guide the AI's behavior
+- **`tools`** - Function calling tools for extended capabilities
+- **`voice`** - Voice selection (alloy, echo, shimmer, etc.)
+- **`temperature`** - Response randomness (0.0 - 1.0)
+- **`prompt`** - Reference to a stored prompt by ID (see below)
+- Other session parameters - See [OpenAI's session configuration reference](https://platform.openai.com/docs/api-reference/realtime-sessions)
+
+#### Example: Custom Instructions and Tools
+
+<CodeGroup>
+
+```python Python
+from openai import AsyncOpenAI
+
+client = AsyncOpenAI(api_key="your-openai-api-key")
+
+# Create ephemeral client secret with custom configuration
+session = await client.realtime.client_secrets.create(
+    expires_after={"seconds": 7200, "anchor": "created_at"},
+    session={
+        "type": "realtime",
+        "model": "gpt-realtime",
+        "instructions": "You are a helpful AI assistant representing a company. Be professional and friendly.",
+        "voice": "alloy",
+        "temperature": 0.8,
+        "tools": [
+            {
+                "type": "function",
+                "name": "get_weather",
+                "description": "Get the current weather for a location",
+                "parameters": {
+                    "type": "object",
+                    "properties": {
+                        "location": {"type": "string", "description": "City name"}
+                    },
+                    "required": ["location"]
+                }
+            }
+        ]
+    }
+)
+
+client_secret = session.value
+```
+
+```javascript JavaScript/Node.js
+import OpenAI from 'openai';
+
+const client = new OpenAI({ apiKey: 'your-openai-api-key' });
+
+// Create ephemeral client secret with custom configuration
+const session = await client.realtime.client_secrets.create({
+  expires_after: { seconds: 7200, anchor: 'created_at' },
+  session: {
+    type: 'realtime',
+    model: 'gpt-realtime',
+    instructions: 'You are a helpful AI assistant representing a company. Be professional and friendly.',
+    voice: 'alloy',
+    temperature: 0.8,
+    tools: [
+      {
+        type: 'function',
+        name: 'get_weather',
+        description: 'Get the current weather for a location',
+        parameters: {
+          type: 'object',
+          properties: {
+            location: { type: 'string', description: 'City name' }
+          },
+          required: ['location']
+        }
+      }
+    ]
+  }
+});
+
+const clientSecret = session.value;
+```
+
+```bash cURL
+curl https://api.openai.com/v1/realtime/client_secrets \
+  -H "Authorization: Bearer YOUR_OPENAI_API_KEY" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "expires_after": {
+      "seconds": 7200,
+      "anchor": "created_at"
+    },
+    "session": {
+      "type": "realtime",
+      "model": "gpt-realtime",
+      "instructions": "You are a helpful AI assistant representing a company. Be professional and friendly.",
+      "voice": "alloy",
+      "temperature": 0.8,
+      "tools": [
+        {
+          "type": "function",
+          "name": "get_weather",
+          "description": "Get the current weather for a location",
+          "parameters": {
+            "type": "object",
+            "properties": {
+              "location": {"type": "string", "description": "City name"}
+            },
+            "required": ["location"]
+          }
+        }
+      ]
+    }
+  }'
+```
+
+</CodeGroup>
+
+#### Using Stored Prompts
+
+OpenAI allows you to save and reuse prompts across sessions. Instead of passing instructions inline, you can reference a stored prompt by its ID (format: `pmpt_xxx`).
+
+<Tip>
+Stored prompts can include instructions, tools, variables, and example messages. This helps maintain consistency and simplifies prompt management.
+</Tip>
+
+<CodeGroup>
+
+```python Python
+from openai import AsyncOpenAI
+
+client = AsyncOpenAI(api_key="your-openai-api-key")
+
+# Create ephemeral client secret using a stored prompt
+session = await client.realtime.client_secrets.create(
+    expires_after={"seconds": 7200, "anchor": "created_at"},
+    session={
+        "type": "realtime",
+        "model": "gpt-realtime",
+        "prompt": {
+            "id": "pmpt_abc123",  # Your stored prompt ID
+            "version": "6",       # Optional: pin to specific version
+            "variables": {        # Optional: pass variables to prompt
+                "company_name": "Acme Corp",
+                "tone": "professional"
+            }
+        }
+    }
+)
+
+client_secret = session.value
+```
+
+```javascript JavaScript/Node.js
+import OpenAI from 'openai';
+
+const client = new OpenAI({ apiKey: 'your-openai-api-key' });
+
+// Create ephemeral client secret using a stored prompt
+const session = await client.realtime.client_secrets.create({
+  expires_after: { seconds: 7200, anchor: 'created_at' },
+  session: {
+    type: 'realtime',
+    model: 'gpt-realtime',
+    prompt: {
+      id: 'pmpt_abc123',  // Your stored prompt ID
+      version: '6',       // Optional: pin to specific version
+      variables: {        // Optional: pass variables to prompt
+        company_name: 'Acme Corp',
+        tone: 'professional'
+      }
+    }
+  }
+});
+
+const clientSecret = session.value;
+```
+
+```bash cURL
+curl https://api.openai.com/v1/realtime/client_secrets \
+  -H "Authorization: Bearer YOUR_OPENAI_API_KEY" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "expires_after": {
+      "seconds": 7200,
+      "anchor": "created_at"
+    },
+    "session": {
+      "type": "realtime",
+      "model": "gpt-realtime",
+      "prompt": {
+        "id": "pmpt_abc123",
+        "version": "6",
+        "variables": {
+          "company_name": "Acme Corp",
+          "tone": "professional"
+        }
+      }
+    }
+  }'
+```
+
+</CodeGroup>
+
+**Learn More:**
+- [OpenAI Realtime API Guide](https://platform.openai.com/docs/guides/realtime) - Comprehensive guide to the Realtime API
+- [Session Configuration Reference](https://platform.openai.com/docs/api-reference/realtime-sessions) - Complete list of configuration options
+- [Session Update Events](https://platform.openai.com/docs/api-reference/realtime-client-events/session/update) - Dynamically update session configuration
+
+### Client Secret Expiration
+
+Ephemeral client secrets expire after the specified duration (7200 seconds = 2 hours in the example above). Plan your session lifecycle accordingly:
+
+- Create a new ephemeral client secret for each user session
+- Handle expiration by creating new sessions
+- Don't reuse expired client secrets
+
+## Configuring the Conversation Engine
+
+When creating an Avaturn session, configure the conversation engine with type `"openai-realtime"` and pass the OpenAI client secret.
+
+### Configuration Schema
+
+The conversation engine configuration requires two fields:
+
+- **`type`**: Must be `"openai-realtime"`
+- **`client_secret`**: The ephemeral client secret from OpenAI (see above)
+
+### Session Creation Examples
+
+<CodeGroup>
+
+```python Python
+import requests
+
+# After creating the OpenAI client secret (see above)
+response = requests.post(
+    "https://api.avaturn.live/api/v1/sessions",
+    headers={
+        "Authorization": f"Bearer {avaturn_api_key}",
+        "Content-Type": "application/json"
+    },
+    json={
+        "conversation_engine": {
+            "type": "openai-realtime",
+            "client_secret": client_secret  # From OpenAI
+        }
+    }
+)
+
+data = response.json()
+session_id = data["session_id"]
+session_token = data["token"]
+```
+
+```javascript JavaScript/Node.js
+// After creating the OpenAI client secret (see above)
+const response = await fetch('https://api.avaturn.live/api/v1/sessions', {
+  method: 'POST',
+  headers: {
+    'Authorization': `Bearer ${avaturnApiKey}`,
+    'Content-Type': 'application/json',
+  },
+  body: JSON.stringify({
+    conversation_engine: {
+      type: 'openai-realtime',
+      client_secret: clientSecret, // From OpenAI
+    },
+  }),
+});
+
+const data = await response.json();
+const sessionId = data.session_id;
+const sessionToken = data.token;
+```
+
+```bash cURL
+curl -X POST https://api.avaturn.live/api/v1/sessions \
+  -H "Authorization: Bearer YOUR_AVATURN_API_KEY" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "conversation_engine": {
+      "type": "openai-realtime",
+      "client_secret": "sess_xxxxxxxxxxxx"
+    }
+  }'
+```
+
+</CodeGroup>
+
+### Response
+
+The session creation endpoint returns:
+
+- **`session_id`**: Unique identifier for the session
+- **`token`**: Session token to pass to your frontend for SDK initialization
+
+Pass the `session_token` to your frontend to initialize the Avaturn Web SDK. See the [Web SDK documentation](https://docs.avaturn.live/web-sdk/) for details on connecting and managing the session from the client side.
+
+## Session Management
+
+### Session Lifecycle
+
+1. **Created**: Session is initialized but not yet active
+2. **Active**: User has connected and conversation is ongoing
+3. **Terminated**: Session has been explicitly ended or expired
+
+### Terminating Sessions
+
+To end a session programmatically:
+
+<CodeGroup>
+
+```python Python
+import requests
+
+requests.delete(
+    f"https://api.avaturn.live/api/v1/sessions/{session_id}",
+    headers={"Authorization": f"Bearer {avaturn_api_key}"}
+)
+```
+
+```javascript JavaScript/Node.js
+await fetch(`https://api.avaturn.live/api/v1/sessions/${sessionId}`, {
+  method: 'DELETE',
+  headers: {
+    'Authorization': `Bearer ${avaturnApiKey}`,
+  },
+});
+```
+
+```bash cURL
+curl -X DELETE https://api.avaturn.live/api/v1/sessions/SESSION_ID \
+  -H "Authorization: Bearer YOUR_AVATURN_API_KEY"
+```
+
+</CodeGroup>
+
+<Info>
+Sessions automatically terminate when the ephemeral client secret expires. Always handle expiration gracefully in your application.
+</Info>
+
+## Additional Resources
+
+- [OpenAI Realtime API Documentation](https://platform.openai.com/docs/guides/realtime)
+- [Avaturn Web SDK Documentation](https://docs.avaturn.live/web-sdk/)
+- [Avaturn API Reference](/api-reference) (for complete session creation parameters)

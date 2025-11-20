@@ -8,4 +8,6 @@ description: 'Avaturn.Live Documentation'
 We expect you to work with API in the following way:
 1. You [create a session](/rest) on your backend and send a session token to the frontend.
 2. You use our [Web SDK](/web-sdk) there to control the avatar speech.
-3. You terminate a session in the backend if needed.
+3. You terminate a session in the backend if needed. The session will be automatically terminated when user leaves.
+
+The current recommended approach to the integration is to use [OpenAI Realtime conversation engine](/howtos/openai_realtime_api).

@@ -1,0 +1,85 @@
+{
+  "$schema": "https://mintlify.com/docs.json",
+  "theme": "mint",
+  "name": "Avaturn.Live",
+  "colors": {
+    "primary": "#000000",
+    "light": "#FFFFFF",
+    "dark": "#000000"
+  },
+  "favicon": "/favicon.svg",
+  "navigation": {
+    "tabs": [
+      {
+        "tab": "Documentation",
+        "groups": [
+          {
+            "group": "Get Started",
+            "pages": [
+              "introduction"
+            ]
+          },
+          {
+            "group": "REST",
+            "pages": [
+              "rest/integration-guide",
+              "rest/example"
+            ]
+          },
+          {
+            "group": "Web SDK",
+            "pages": [
+              {
+                "group": "SDK Reference",
+                "icon": "asterisk",
+                "pages": [
+                  "web-sdk/reference/properties",
+                  "web-sdk/reference/methods",
+                  "web-sdk/reference/events"
+                ]
+              },
+              "web-sdk/integration-guide",
+              "web-sdk/example"
+            ]
+          },
+          {
+            "group": "How Tos",
+            "pages": [
+              "howtos/llms",
+              "howtos/openai_realtime_api"
+            ]
+          }
+        ]
+      },
+      {
+        "tab": "API Reference",
+        "openapi": "https://api.avaturn.live/api/v1/openapi.json",
+        "groups": [
+          {
+            "group": "API Documentation",
+            "pages": [
+              "api-reference/introduction"
+            ]
+          }
+        ]
+      }
+    ]
+  },
+  "logo": {
+    "light": "/logo/light.svg",
+    "dark": "/logo/dark.svg"
+  },
+  "navbar": {
+    "links": [
+      {
+        "label": "Support",
+        "href": "mailto:support@avaturn.me"
+      }
+    ],
+    "primary": {
+      "type": "button",
+      "label": "Dashboard",
+      "href": "https://avaturn.live/dashboard"
+    }
+  }
+}
