@@ -15,6 +15,8 @@ const avatar = new AvaturnHead(domElement, {
   preloadBundle: false,
   preconnect: false,
   keepAlive: false,
+  audioSource: false,
+  immediatelyJoin: true,
 });
 
 await avatar.init()
@@ -82,4 +84,42 @@ If `keepAlive` is set to `false`, the SDK will automatically disconnect the stre
 **When might you not need keepAlive?**
 - If you want to automatically free up resources when there is no interaction with the avatar.
 - If reconnecting to the stream is not critical for your application.
+</ParamField>
+
+<ParamField path="audioSource" type="boolean" default="false">
+The `audioSource` parameter controls whether to use the user's microphone for voice communication with the avatar.
+
+**Why is this important?**
+
+When audio source is enabled (`audioSource: true`), the SDK will request microphone permissions and allow the user to communicate with the avatar using voice input. This enables natural voice-based interaction with the avatar.
+
+When disabled (`audioSource: false`), voice communication is not available, and you will need to implement text-based functionality using the appropriate SDK methods.
+
+**When should you enable audioSource?**
+- If you want to provide voice-based interaction with the avatar for a more natural conversation experience.
+- In scenarios where hands-free communication is preferred or required.
+
+**When might you not need audioSource?**
+- If you prefer to implement text-based communication only.
+- In environments where microphone access is not available or desired.
+- If you want to manage audio input manually through other SDK methods.
+</ParamField>
+
+<ParamField path="immediatelyJoin" type="boolean" default="true">
+The `immediatelyJoin` parameter controls whether to automatically connect to the avatar room as soon as the SDK is ready.
+
+**Why is this important?**
+
+When immediate joining is enabled (`immediatelyJoin: true`), the SDK automatically connects to the avatar room once initialization is complete, and the user will immediately see and hear the avatar.
+
+When disabled (`immediatelyJoin: false`), you need to wait for the `init()` method promise to resolve or listen for the `init` event, then manually call the `join()` method to connect to the room. This gives you control over the exact moment when the user connects and starts interacting with the avatar.
+
+**When should you enable immediatelyJoin?**
+- If you want the avatar to be available immediately after SDK initialization.
+- In scenarios where you want a seamless, automatic connection experience.
+
+**When might you disable immediatelyJoin?**
+- If you need to control the exact timing of when the user connects to the avatar room.
+- When you want to perform additional setup or user interactions before showing the avatar.
+- If you need to implement custom logic between SDK initialization and room connection.
 </ParamField>

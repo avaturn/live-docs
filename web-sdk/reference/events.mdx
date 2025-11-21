@@ -56,6 +56,19 @@ These events manage the session state and avatar activity.
   Triggered when the avatar goes into an idle or inactive state.  
   Does not pass additional data to the callback.
 
+- **`local_audio_change`**  
+  Triggered when the user turns their microphone on or off.  
+  **Callback data**:  
+  ```javascript
+    localAudio: boolean  // true - microphone is active, false - microphone is muted
+  ```
+
+- **`local_mic_state_change`**  
+  Triggered when the user's microphone permission state changes.  
+  **Callback data**:  
+  ```javascript
+    state: 'blocked' | 'off' | 'sendable' | 'loading' | 'interrupted' | 'playable';  // Current microphone state
+  ```
 ---
 
 ### Example Usage
@@ -75,3 +88,5 @@ sdk.off('avatar_ended_speaking_phrase', handlePhraseEnd);
 ```
 
 ---
+
+
