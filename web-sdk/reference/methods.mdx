@@ -180,3 +180,135 @@ The method returns a promise that resolves once the disposal process is complete
 _Ensure that you call `dispose()` when you are finished using the avatar to maintain optimal performance and resource management._
 
 ---
+
+## `toggleLocalAudio()`
+
+The `toggleLocalAudio()` method toggles or sets the user's microphone state.
+
+**Why is this important?**
+
+This method allows you to control whether the user's microphone is active or muted. You can either toggle the current state or set a specific state by providing a boolean value.
+
+**Arguments:**
+<ParamField path="value" type="boolean" optional>
+Optional boolean value to set the microphone state. If not provided, the current state will be toggled.
+</ParamField>
+
+**When should you use `toggleLocalAudio()`?**
+- When you need to programmatically mute or unmute the user's microphone.
+- To provide microphone control functionality in your UI.
+
+**Example usage**:
+```javascript
+// Toggle current microphone state
+avatar.toggleLocalAudio();
+
+// Set microphone to active
+avatar.toggleLocalAudio(true);
+
+// Set microphone to muted
+avatar.toggleLocalAudio(false);
+```
+
+---
+
+## `setOutputDevice()`
+
+The `setOutputDevice()` method sets the audio output device for the avatar.
+
+**Why is this important?**
+
+This method allows you to specify which audio device should be used for playing the avatar's voice output, enabling users to choose their preferred speakers or headphones.
+
+**Arguments:**
+<ParamField path="device" type="object" required>
+Device configuration object containing the output device ID.
+</ParamField>
+<ParamField path="device.outputDeviceId" type="string" optional>
+The ID of the audio output device to use.
+</ParamField>
+
+**When should you use `setOutputDevice()`?**
+- When you want to allow users to select their preferred audio output device.
+- To ensure avatar audio plays through the correct speakers or headphones.
+
+**Example usage**:
+```javascript
+// Set specific output device
+await avatar.setOutputDevice({ outputDeviceId: 'device-id-123' });
+```
+
+**Return Value:**
+The method returns a promise that resolves when the output device is successfully set.
+
+---
+
+## `setInputDevices()`
+
+The `setInputDevices()` method configures the audio and video input devices for the session.
+
+**Why is this important?**
+
+This method allows you to specify which microphone and camera should be used for the avatar session, enabling users to choose their preferred input devices.
+
+**Arguments:**
+<ParamField path="devices" type="object" required>
+Device configuration object containing input device settings.
+</ParamField>
+<ParamField path="devices.audioDeviceId" type="string | false | null" optional>
+The ID of the audio input device (microphone) to use. Set to false or null to disable audio input.
+</ParamField>
+
+**When should you use `setInputDevices()`?**
+- When you want to allow users to select their preferred microphone or camera.
+- To configure specific input devices for the avatar session.
+
+**Example usage**:
+```javascript
+// Set specific input devices
+const result = await avatar.setInputDevices({
+  audioDeviceId: 'microphone-id-123',
+});
+
+// Disable audio input
+await avatar.setInputDevices({ audioDeviceId: false });
+```
+
+**Return Value:**
+The method returns a promise that resolves with device information of type
+```javascript
+{
+  mic: {} | MediaDeviceInfo;
+  speaker: {} | MediaDeviceInfo;
+}
+```
+
+---
+
+## `requestMediaDevices()`
+
+The `requestMediaDevices()` method retrieves a list of available media devices (microphones, cameras, speakers).
+
+**Why is this important?**
+
+This method allows you to enumerate all available media devices on the user's system, which is essential for providing device selection options in your application.
+
+**When should you use `requestMediaDevices()`?**
+- When you need to show users a list of available microphones, cameras, or speakers.
+- Before calling `setInputDevices()` or `setOutputDevice()` to ensure the device ID is valid.
+
+**Example usage**:
+```javascript
+// Get list of available devices
+const deviceList = await avatar.requestMediaDevices();
+console.log('Available devices:', deviceList.devices);
+
+// Filter microphones
+const microphones = deviceList.devices.filter(device => device.kind === 'audioinput');
+```
+
+**Return Value:**
+The method returns a promise that resolves with an object containing:
+- `devices`: Array of `MediaDeviceInfo` objects representing available media devices.
+
+---
