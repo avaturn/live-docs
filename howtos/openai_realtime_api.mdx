@@ -146,17 +146,54 @@ curl https://api.openai.com/v1/realtime/client_secrets \
 When creating an ephemeral client secret, you can customize the OpenAI Realtime session by configuring prompts, tools, voice settings, and more. Avaturn passes this configuration through to OpenAI.
 
 <Info>
-You have full control over the OpenAI session configuration. Configure instructions, tools, voice, temperature, and other parameters when creating the ephemeral client secret.
+You have full control over the OpenAI session configuration. Configure instructions, tools, audio settings, and other parameters when creating the ephemeral client secret.
 </Info>
 
 #### Available Configuration Options
 
-- **`instructions`** - Custom system prompts to guide the AI's behavior
+**Top-level options:**
+- **`instructions`** - Custom system prompt to guide the AI's behavior
+- **`model`** - Model ID (e.g., `gpt-realtime`, `gpt-4o-realtime-preview-2024-12-17`)
 - **`tools`** - Function calling tools for extended capabilities
-- **`voice`** - Voice selection (alloy, echo, shimmer, etc.)
-- **`temperature`** - Response randomness (0.0 - 1.0)
+- **`tool_choice`** - Tool selection mode: `"auto"`, `"none"`, `"required"`, or specific tool
 - **`prompt`** - Reference to a stored prompt by ID (see below)
-- Other session parameters - See [OpenAI's session configuration reference](https://platform.openai.com/docs/api-reference/realtime-sessions)
+- **`truncation`** - Context truncation: `"auto"`, `"disabled"`, or retention ratio config
+- **`tracing`** - Tracing configuration for debugging
+
+**Audio input options (`audio.input`):**
+- **`transcription`** - Transcription settings with `model` (`whisper-1`, `gpt-4o-transcribe`, etc.), `language`, and `prompt`
+- **`turn_detection`** - Voice activity detection (see below)
+
+**Audio output options (`audio.output`):**
+- **`format`** - Output audio format (same options as input)
+- **`voice`** - Voice selection: `alloy`, `ash`, `ballad`, `coral`, `echo`, `sage`, `shimmer`, `verse`, `marin`, `cedar`
+- **`speed`** - Speech speed: `0.25` to `1.5` (default `1.0`)
+
+**Turn detection options (`audio.input.turn_detection`):**
+
+Server VAD (voice activity detection):
+```json
+{
+  "type": "server_vad",
+  "threshold": 0.5,
+  "prefix_padding_ms": 300,
+  "silence_duration_ms": 500,
+  "create_response": true,
+  "interrupt_response": true
+}
+```
+
+Semantic VAD (AI-based turn detection):
+```json
+{
+  "type": "semantic_vad",
+  "eagerness": "medium",
+  "create_response": true,
+  "interrupt_response": true
+}
+```
+
+For complete details, see [OpenAI's session configuration reference](https://platform.openai.com/docs/api-reference/realtime-sessions).
 
 #### Example: Custom Instructions and Tools
 
@@ -174,8 +211,11 @@ session = await client.realtime.client_secrets.create(
         "type": "realtime",
         "model": "gpt-realtime",
         "instructions": "You are a helpful AI assistant representing a company. Be professional and friendly.",
-        "voice": "alloy",
-        "temperature": 0.8,
+        "audio": {
+            "output": {
+                "voice": "alloy"
+            }
+        },
         "tools": [
             {
                 "type": "function",
@@ -208,8 +248,11 @@ const session = await client.realtime.client_secrets.create({
     type: 'realtime',
     model: 'gpt-realtime',
     instructions: 'You are a helpful AI assistant representing a company. Be professional and friendly.',
-    voice: 'alloy',
-    temperature: 0.8,
+    audio: {
+      output: {
+        voice: 'alloy'
+      }
+    },
     tools: [
       {
         type: 'function',
@@ -243,8 +286,11 @@ curl https://api.openai.com/v1/realtime/client_secrets \
       "type": "realtime",
       "model": "gpt-realtime",
       "instructions": "You are a helpful AI assistant representing a company. Be professional and friendly.",
-      "voice": "alloy",
-      "temperature": 0.8,
+      "audio": {
+        "output": {
+          "voice": "alloy"
+        }
+      },
       "tools": [
         {
           "type": "function",
