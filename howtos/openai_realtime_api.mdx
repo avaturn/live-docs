@@ -58,7 +58,7 @@ sequenceDiagram
     participant OpenAI as OpenAI API
 
     DevBackend->>OpenAI: 1. Create ephemeral client secret
-    OpenAI-->>DevBackend: Return client secret (sess_xxx)
+    OpenAI-->>DevBackend: Return client secret (ek_xxx)
 
     DevBackend->>AvaturnAPI: 2. Create session with client secret
     AvaturnAPI-->>DevBackend: Return session_id & token
@@ -83,6 +83,11 @@ OpenAI's Realtime API uses **ephemeral client secrets** for secure, temporary ac
 
 <Warning>
 **Never expose your OpenAI API key to the frontend.** Always create ephemeral client secrets on your backend server.
+</Warning>
+
+<Warning>
+  Please use only GA version of OpenAI Realtime API. Beta or mixed API version usage is not supported and will prevent the session from properly starting.
+  Refer [here](https://platform.openai.com/docs/guides/realtime#beta-to-ga-migration) to understand the difference.
 </Warning>
 
 ### Code Examples
@@ -165,7 +170,6 @@ You have full control over the OpenAI session configuration. Configure instructi
 - **`turn_detection`** - Voice activity detection (see below)
 
 **Audio output options (`audio.output`):**
-- **`format`** - Output audio format (same options as input)
 - **`voice`** - Voice selection: `alloy`, `ash`, `ballad`, `coral`, `echo`, `sage`, `shimmer`, `verse`, `marin`, `cedar`
 - **`speed`** - Speech speed: `0.25` to `1.5` (default `1.0`)
 
@@ -400,7 +404,6 @@ curl https://api.openai.com/v1/realtime/client_secrets \
 **Learn More:**
 - [OpenAI Realtime API Guide](https://platform.openai.com/docs/guides/realtime) - Comprehensive guide to the Realtime API
 - [Session Configuration Reference](https://platform.openai.com/docs/api-reference/realtime-sessions) - Complete list of configuration options
-- [Session Update Events](https://platform.openai.com/docs/api-reference/realtime-client-events/session/update) - Dynamically update session configuration
 
 ### Client Secret Expiration
 
@@ -476,7 +479,7 @@ curl -X POST https://api.avaturn.live/api/v1/sessions \
   -d '{
     "conversation_engine": {
       "type": "openai-realtime",
-      "client_secret": "sess_xxxxxxxxxxxx"
+      "client_secret": "ek_xxxxxxxxxxxx"
     }
   }'
 ```
