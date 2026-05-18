@@ -46,7 +46,8 @@
             "group": "How Tos",
             "pages": [
               "howtos/llms",
-              "howtos/openai_realtime_api"
+              "howtos/openai_realtime_api",
+              "howtos/cartesia"
             ]
           }
         ]
