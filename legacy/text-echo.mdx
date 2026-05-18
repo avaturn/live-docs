@@ -1,0 +1,133 @@
+---
+title: 'Text echo (legacy)'
+description: 'Legacy server-driven speech: push text, avatar speaks it. Not recommended for new integrations.'
+icon: 'message'
+---
+
+<Warning>
+**Legacy / not recommended.** Text echo is preserved for backward compatibility only. It has **no STT**, no built-in interruption, and you handle the LLM pipeline yourself. New integrations should use a conversation engine — [OpenAI Realtime](/howtos/openai_realtime_api) or [Cartesia](/howtos/cartesia).
+</Warning>
+
+## When this still makes sense
+
+Use text echo only if you need:
+- Fully scripted, deterministic speech with no STT
+- Backend-driven LLM output where you stream sentences to the avatar yourself
+- Compatibility with existing integrations that already depend on this flow
+
+For anything voice-to-voice, [OpenAI Realtime](/howtos/openai_realtime_api) or [Cartesia](/howtos/cartesia) is the right choice.
+
+## How it works
+
+<Steps>
+  <Step title="Create a session">
+    [`POST /api/v1/sessions`](/api-reference/create-session) with an explicit `text-echo` engine config, or omit `conversation_engine` to inherit the avatar's default text-echo voice. The avatar stays silent until you push text.
+  </Step>
+  <Step title="Push text">
+    From your backend: [`POST /api/v1/sessions/{id}/tasks`](/api-reference/create-speech-task). From the frontend: [`avatar.task(text)`](/web-sdk/reference/methods#task-text) on the Web SDK instance.
+  </Step>
+  <Step title="Terminate">
+    [`DELETE /api/v1/sessions/{id}`](/api-reference/terminate-session), or wait for `user_absent_timeout`.
+  </Step>
+</Steps>
+
+## Engine config
+
+To override the default voice, pass an explicit `text-echo` engine config when creating the session:
+
+```json
+{
+  "conversation_engine": {
+    "type": "text-echo",
+    "tts": {
+      "engine": "elevenlabs",
+      "voice_id": "<elevenlabs-voice-id>"
+    }
+  }
+}
+```
+
+Only `elevenlabs` is currently accepted as the TTS engine. `tts` is required when `type` is `text-echo`. The `voice_id` is validated against ElevenLabs at session creation — an invalid id returns `HTTP 400`.
+
+## Backend example
+
+```python
+import asyncio
+import httpx
+from pydantic import BaseModel
+
+
+class CreateSessionResponse(BaseModel):
+    session_id: str
+    token: str
+
+
+class SessionSayResponse(BaseModel):
+    task_id: str
+
+
+class APIClient:
+    def __init__(self, api_key: str, base_url: str = "https://api.avaturn.live") -> None:
+        self.headers = {"Authorization": f"Bearer {api_key}"}
+        self.base_url = base_url
+
+    async def create_session(self) -> CreateSessionResponse:
+        async with httpx.AsyncClient() as http:
+            r = await http.post(f"{self.base_url}/api/v1/sessions", headers=self.headers)
+            return CreateSessionResponse.model_validate(r.json())
+
+    async def say(self, session_id: str, text: str) -> SessionSayResponse:
+        async with httpx.AsyncClient() as http:
+            r = await http.post(
+                f"{self.base_url}/api/v1/sessions/{session_id}/tasks",
+                json={"text": text},
+                headers=self.headers,
+            )
+            return SessionSayResponse.model_validate(r.json())
+
+    async def terminate_session(self, session_id: str) -> None:
+        async with httpx.AsyncClient() as http:
+            await http.delete(
+                f"{self.base_url}/api/v1/sessions/{session_id}",
+                headers=self.headers,
+            )
+
+
+async def main() -> None:
+    client = APIClient(api_key="<AVATURN_API_KEY>")
+    session = await client.create_session()
+    # send session.token to the frontend
+
+    await client.say(session.session_id, "Hello, world!")
+
+    await asyncio.sleep(3)
+    await client.terminate_session(session.session_id)
+
+
+asyncio.run(main())
+```
+
+## Frontend example
+
+```typescript
+import { AvaturnHead } from "@avaturn-live/web-sdk";
+
+const root = document.querySelector<HTMLDivElement>("#avaturn-video")!;
+const avatar = new AvaturnHead(root, {
+  sessionToken: "<token from backend>",
+});
+await avatar.init();
+
+await avatar.task("Some text to say");
+// queued behind any in-progress utterance; nothing speaks while disconnected
+```
+
+Related SDK methods (also legacy): [`task()`, `cancelAllTasks()`, `changeVoice()`](/web-sdk/reference/methods#legacy-text-echo).
+
+## Streaming LLM output
+
+To feed an LLM stream through `task()`, see [Streaming LLM output](/legacy/llm-streaming).
+
+## React demo
+
+The legacy [React demo](/legacy/react-example) shows this flow end-to-end with an Echo / GPT-4 toggle.

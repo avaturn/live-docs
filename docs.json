@@ -16,19 +16,21 @@
           {
             "group": "Get Started",
             "pages": [
-              "introduction"
+              "introduction",
+              "quickstart"
             ]
           },
           {
-            "group": "REST",
+            "group": "Conversation Engines",
             "pages": [
-              "rest/integration-guide",
-              "rest/example"
+              "howtos/openai_realtime_api",
+              "howtos/cartesia"
             ]
           },
           {
             "group": "Web SDK",
             "pages": [
+              "web-sdk/integration-guide",
               {
                 "group": "SDK Reference",
                 "icon": "asterisk",
@@ -37,17 +39,23 @@
                   "web-sdk/reference/methods",
                   "web-sdk/reference/events"
                 ]
-              },
-              "web-sdk/integration-guide",
-              "web-sdk/example"
+              }
             ]
           },
           {
-            "group": "How Tos",
+            "group": "REST API",
             "pages": [
-              "howtos/llms",
-              "howtos/openai_realtime_api",
-              "howtos/cartesia"
+              "rest/integration-guide",
+              "rest/example"
+            ]
+          },
+          {
+            "group": "Legacy",
+            "icon": "box-archive",
+            "pages": [
+              "legacy/text-echo",
+              "legacy/llm-streaming",
+              "legacy/react-example"
             ]
           }
         ]
@@ -66,6 +74,16 @@
       }
     ]
   },
+  "redirects": [
+    {
+      "source": "/howtos/llms",
+      "destination": "/legacy/llm-streaming"
+    },
+    {
+      "source": "/web-sdk/example",
+      "destination": "/legacy/react-example"
+    }
+  ],
   "logo": {
     "light": "/logo/light.svg",
     "dark": "/logo/dark.svg"

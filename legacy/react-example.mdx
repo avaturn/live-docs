@@ -1,0 +1,24 @@
+---
+title: 'React demo (legacy)'
+description: 'React integration with Echo / GPT-4 text-echo flow.'
+icon: 'react'
+---
+
+<Warning>
+**Legacy.** This demo uses the [text-echo flow](/legacy/text-echo) (avatar speaks text you push to it). For a voice-to-voice integration, follow the [Quickstart](/quickstart) instead.
+</Warning>
+
+The [example-react demo](https://github.com/avaturn-live/example-react) integrates OpenAI's chat completions with the Avaturn.Live SDK over the legacy text-echo flow. Users submit text inputs that either trigger an echo from the avatar or stream a GPT-4 response back through the avatar.
+
+## Components
+
+- **[OpenAI hook](https://github.com/avaturn-live/example-react/blob/main/src/hooks/use-openai.hook.tsx)** — manages the OpenAI client and streams responses.
+- **[TokenPopup](https://github.com/avaturn-live/example-react/blob/main/src/components/token-popup.tsx)** — modal for entering the OpenAI API token.
+- **[SettingsForm](https://github.com/avaturn-live/example-react/blob/main/src/components/settings-form.tsx)** — switches between Echo and OpenAI mode and captures API keys.
+- **[Home](https://github.com/avaturn-live/example-react/blob/main/src/pages/index.tsx)** — mounts the avatar video and the input form.
+
+## Flow
+
+1. The user picks a mode (Echo or OpenAI) and provides API keys via `SettingsForm`.
+2. The avatar is initialized with the Avaturn.Live SDK.
+3. On submit, text is either passed straight to `avatar.task(text)` (echo) or streamed through OpenAI; each sentence chunk is pushed to `avatar.task()` as it arrives (see [Streaming LLM output](/legacy/llm-streaming)).

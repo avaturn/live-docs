@@ -1,24 +1,30 @@
 # Avaturn.Live Docs
 
+Mintlify-powered documentation for [Avaturn.Live](https://avaturn.live).
+
 ## Development
 
-Install the [Mintlify CLI](https://www.npmjs.com/package/mintlify) to preview the documentation changes locally. To install, use the following command
+Install the [Mintlify CLI](https://www.npmjs.com/package/mint):
 
 ```
-npm i -g mintlify
+npm i -g mint
 ```
 
-Run the following command at the root of your documentation (where mint.json is)
+Preview locally from the repo root (where `docs.json` lives):
 
 ```
-mintlify dev
+mint dev
 ```
 
-## Publishing Changes
+## Publishing
 
-Install our Github App to auto propagate changes from your repo to your deployment. Changes will be deployed to production automatically after pushing to the default branch. Find the link to install on your dashboard. 
+The Mintlify GitHub App auto-deploys the default branch to production. The install link is in the Mintlify dashboard.
+
+## Audits
+
+Doc accuracy / completeness reports are stored under [`audits/`](./audits) and version-named by date (`YYYY-MM-DD-<scope>-audit.md`).
 
 ## Troubleshooting
 
-- Mintlify dev isn't running - Run `mintlify install` it'll re-install dependencies.
-- Page loads as a 404 - Make sure you are running in a folder with `mint.json`
+- `mint dev` fails — run `mint install` to reinstall deps.
+- 404 on every page — confirm you're running from the folder containing `docs.json`.

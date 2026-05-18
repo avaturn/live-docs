@@ -1,62 +1,67 @@
 ---
-title: 'Integration Guide'
-description: 'Step-by-step approach to integrating Web SDK into your project'
+title: 'Web SDK Integration Guide'
+description: 'Mount the avatar in your frontend and wire up events.'
 icon: 'instalod'
 ---
 
-## Step 1: Install Dependencies
+The Web SDK renders an Avaturn avatar into a DOM element and bridges audio between the user's microphone and the active [conversation engine](/howtos/openai_realtime_api).
 
-Install the SDK.
+## 1. Install
 
 ```bash
 npm install @avaturn-live/web-sdk
 ```
 
-## Step 2: Initialize
+## 2. Initialize
 
-Create an instance of the `AvaturnHead` class and initialize it with an optional configuration.  
-You need to pass a session token obtained from [this endpoint](ref:create_session_v1_session_create_post) (**it must be used in the backend**).  
-
-Make sure to correctly pass a reference to the DOM element (`domElement`) depending on your framework (e.g., use `ref` in React or Vue, `@ViewChild` in Angular, etc.).
+Create an `AvaturnHead` with a session token minted on your backend ([`POST /api/v1/sessions`](/api-reference/create-session)).
 
 ```typescript
-import { AvaturnHead } from "./AvaturnHead";
+import { AvaturnHead } from "@avaturn-live/web-sdk";
 
-const domElement = document.querySelector("#avaturn-video");
+const root = document.querySelector<HTMLDivElement>("#avaturn-video")!;
+const avatar = new AvaturnHead(root, {
+  sessionToken: "<token from backend>",
+  audioSource: true, // request mic for voice-to-voice engines
+});
 
-const avaturnHead = new AvaturnHead(domElement, { sessionToken: "[session token obtained from backend]" });
-await avaturnHead.init();
+await avatar.init();
 ```
 
-## Step 3: Send Tasks
+<Tip>
+Make sure the DOM node exists before construction. In React/Vue use a `ref` and construct inside an effect; in Angular use `@ViewChild` and construct in `ngAfterViewInit`.
+</Tip>
 
-Use the `task` method to send speech requests. If the avatar is already speaking, the text fragment is queued to be spoken at a later time. Nothing is said while you're disconnected.
+All constructor options: [Properties](/web-sdk/reference/properties).
 
-```typescript
-const response = await avaturnHead.task("Some text to say");
-console.log(response);
-```
-
-## Step 4: Subscribe to Events
-
-Register event listeners to handle specific events during the session.
+## 3. Subscribe to events
 
 ```typescript
-avaturnHead.on("avatar_started_speaking", (data) => {
-  console.log("Avatar started speaking:", data);
+avatar.on("avatar_started_speaking", () => {
+  // e.g. show "speaking" indicator
+});
+
+avatar.on("avatar_ended_speaking", () => {
+  // e.g. hide indicator
 });
 ```
 
-If you no longer need to listen to an event, you can remove the event listener.
+Full list: [Events](/web-sdk/reference/events).
+
+## 4. Dispose
 
 ```typescript
-avaturnHead.off("avatar_started_speaking", callback);
+await avatar.dispose();
 ```
 
-## Step 6: Dispose
+`dispose()` tears down local SDK state. The backend session terminates via `user_absent_timeout` after disconnection — to end it immediately call [`DELETE /api/v1/sessions/{id}`](/api-reference/terminate-session).
 
-When you are done with the session, make sure to call the `dispose` method to clean up resources.
+## Under the hood
 
-```typescript
-avaturnHead.dispose();
-```
+The SDK talks to Avaturn through a private endpoint prefix `${apiHost}/_sdk/v0` (default host `https://api.avaturn.live`) authenticated with an `X-Session-Token` header. The session-room handshake is delegated to [Daily.co](https://daily.co/) over WebRTC.
+
+For self-hosted deployments override `apiHost` ([Properties](/web-sdk/reference/properties#apihost)) and make sure both `${host}/api/v1` (public REST) and `${host}/_sdk/v0` (SDK-only) resolve.
+
+## Driving speech manually (legacy)
+
+If you push text from a backend instead of running a conversation engine, see [Legacy text-echo](/legacy/text-echo).

@@ -1,0 +1,17 @@
+---
+title: 'Streaming LLM output (legacy)'
+description: 'Legacy: pipe an LLM stream into the text-echo task endpoint. Use a conversation engine instead.'
+icon: 'shuffle'
+---
+
+<Warning>
+**Legacy.** This pattern wraps an LLM around the [text-echo flow](/legacy/text-echo). New integrations should use [OpenAI Realtime](/howtos/openai_realtime_api) or [Cartesia](/howtos/cartesia) — both handle LLM, TTS, and interruption end-to-end.
+</Warning>
+
+To stream LLM responses into a text-echo avatar:
+
+1. Use your LLM's streaming endpoint.
+2. Split the stream into sentences as it arrives.
+3. Send each sentence to the Avaturn [`POST /api/v1/sessions/{id}/tasks`](/api-reference/create-speech-task) endpoint (or call [`avatar.task()`](/web-sdk/reference/methods#task-text) from the frontend).
+
+For per-sentence chunking heuristics, see ElevenLabs' [streaming TTS WebSocket guide](https://elevenlabs.io/docs/cookbooks/voices/streaming-via-websocket) — the sentence-split pattern applies here too.
