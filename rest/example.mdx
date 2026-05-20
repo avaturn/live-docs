@@ -1,69 +1,76 @@
 ---
 title: 'Example'
-description: 'Pseudocode of backend API usage'
+description: 'End-to-end backend session lifecycle with the OpenAI Realtime engine.'
 icon: 'code'
 ---
 
-## Overview
-
-This pseudocode demonstrates how to interact with Avaturn.Live API that manages sessions, allowing your backend to create sessions, control avatar speech within those sessions, and terminate sessions.
-The example uses `httpx` for asynchronous HTTP requests and `pydantic` for serialization.
-
-## Pseudocode
+Mint an OpenAI ephemeral client secret, create an Avaturn session bound to it, and hand the session token to your frontend. Engine config details: [OpenAI Realtime](/howtos/openai_realtime_api).
 
 ```python
-from pydantic import BaseModel
-import httpx
 import asyncio
+import httpx
+from openai import AsyncOpenAI
+from pydantic import BaseModel
+
+AVATURN_API_KEY = "<AVATURN_API_KEY>"
+OPENAI_API_KEY = "<OPENAI_API_KEY>"
 
 
 class CreateSessionResponse(BaseModel):
     session_id: str
     token: str
 
-    
-class SessionSayResponse(BaseModel):
-    task_id: str
 
-    
-class APIClient:
+class AvaturnClient:
     def __init__(self, api_key: str, base_url: str = "https://api.avaturn.live") -> None:
         self.headers = {"Authorization": f"Bearer {api_key}"}
         self.base_url = base_url
 
-    async def create_session(self) -> CreateSessionResponse:
-        async with httpx.AsyncClient() as client:
-            response = await client.post(f"{self.base_url}/api/v1/sessions", headers=self.headers)
-            return CreateSessionResponse.model_validate(response.json())
-
-    async def say(self, session_id: str, text: str) -> SessionSayResponse:
-        async with httpx.AsyncClient() as client:
-            response = await client.post(f"{self.base_url}/api/v1/sessions/{session_id}/tasks", json={"text": text}, headers=self.headers)
-            return SessionSayResponse.model_validate(response.json())
+    async def create_session(self, client_secret: str) -> CreateSessionResponse:
+        async with httpx.AsyncClient() as http:
+            r = await http.post(
+                f"{self.base_url}/api/v1/sessions",
+                headers=self.headers,
+                json={
+                    "conversation_engine": {
+                        "type": "openai-realtime",
+                        "client_secret": client_secret,
+                    }
+                },
+            )
+            r.raise_for_status()
+            return CreateSessionResponse.model_validate(r.json())
 
     async def terminate_session(self, session_id: str) -> None:
-        async with httpx.AsyncClient() as client:
-            await client.delete(f"{self.base_url}/api/v1/sessions/{session_id}", headers=self.headers)
+        async with httpx.AsyncClient() as http:
+            await http.delete(
+                f"{self.base_url}/api/v1/sessions/{session_id}",
+                headers=self.headers,
+            )
 
 
 async def main() -> None:
-    # Step 1: Create a session
-    client = APIClient(api_key="your_api_key_here")
-    session = await client.create_session()
-    print(session.dict())
-    
-    # You can send session token to frontend for Web SDK use here
+    # 1. Mint a short-lived OpenAI client secret
+    openai = AsyncOpenAI(api_key=OPENAI_API_KEY)
+    secret = await openai.realtime.client_secrets.create(
+        expires_after={"seconds": 600, "anchor": "created_at"},
+        session={"type": "realtime", "model": "gpt-realtime"},
+    )
 
-    # Step 2: Request avatar to say something (note that this code does not wait for the speech end)
-    say_response = await client.say(session.session_id, "Hello, world!")
-    print(say_response.dict())
+    # 2. Create an Avaturn session bound to the OpenAI secret
+    avaturn = AvaturnClient(AVATURN_API_KEY)
+    session = await avaturn.create_session(client_secret=secret.value)
+    print(session.model_dump())  # send session.token to the frontend
 
-    # Step 3: Terminate the session (after some time or condition)
-    await asyncio.sleep(3)
-    await client.terminate_session(session.session_id)
-    print(f"Session {session.session_id} terminated.")
+    # 3. ... user converses with the avatar via the Web SDK ...
+
+    # 4. Terminate explicitly (or rely on auto-termination)
+    await avaturn.terminate_session(session.session_id)
 
 
-import asyncio
 asyncio.run(main())
 ```
+
+<Tip>
+**Cartesia variant.** Replace the OpenAI minting step with the Cartesia access token flow, then set the engine config to `{ "type": "cartesia", "access_token": "...", "agent_id": "..." }`. Full walkthrough: [Cartesia engine](/howtos/cartesia).
+</Tip>

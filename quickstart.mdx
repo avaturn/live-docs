@@ -1,0 +1,139 @@
+---
+title: Quickstart
+description: "Voice-to-voice avatar in 5 minutes with OpenAI Realtime."
+icon: "bolt"
+---
+
+You'll mint an ephemeral OpenAI client secret on your backend, create an Avaturn session bound to it, and connect from the browser. The conversation engine is [OpenAI Realtime](/howtos/openai_realtime_api).
+
+## Prerequisites
+
+- **Avaturn API key** ([dashboard](https://avaturn.live/dashboard))
+- **OpenAI API key** with Realtime API access
+- Backend in Node.js or Python; any JS framework on the frontend
+
+## 1. Mint an OpenAI client secret
+
+On your backend, exchange your OpenAI API key for a short-lived client secret.
+
+<CodeGroup>
+```python Python
+from openai import AsyncOpenAI
+
+openai = AsyncOpenAI(api_key="<OPENAI_API_KEY>")
+secret = await openai.realtime.client_secrets.create(
+    expires_after={"seconds": 600, "anchor": "created_at"},
+    session={
+        "type": "realtime",
+        "model": "gpt-realtime",
+        "instructions": "You are a friendly assistant. Keep replies brief.",
+        "audio": {"output": {"voice": "marin"}},
+    },
+)
+client_secret = secret.value  # ek_...
+```
+
+```javascript Node.js
+import OpenAI from "openai";
+
+const openai = new OpenAI({ apiKey: "<OPENAI_API_KEY>" });
+const secret = await openai.realtime.clientSecrets.create({
+  expires_after: { seconds: 600, anchor: "created_at" },
+  session: {
+    type: "realtime",
+    model: "gpt-realtime",
+    instructions: "You are a friendly assistant. Keep replies brief.",
+    audio: { output: { voice: "marin" } },
+  },
+});
+const clientSecret = secret.value; // ek_...
+```
+</CodeGroup>
+
+## 2. Create an Avaturn session
+
+<CodeGroup>
+```python Python
+import httpx
+
+async with httpx.AsyncClient() as http:
+    r = await http.post(
+        "https://api.avaturn.live/api/v1/sessions",
+        headers={"Authorization": "Bearer <AVATURN_API_KEY>"},
+        json={
+            "conversation_engine": {
+                "type": "openai-realtime",
+                "client_secret": client_secret,
+            }
+        },
+    )
+    r.raise_for_status()
+    session = r.json()  # { "session_id": "...", "token": "..." }
+```
+
+```javascript Node.js
+const resp = await fetch("https://api.avaturn.live/api/v1/sessions", {
+  method: "POST",
+  headers: {
+    Authorization: "Bearer <AVATURN_API_KEY>",
+    "Content-Type": "application/json",
+  },
+  body: JSON.stringify({
+    conversation_engine: {
+      type: "openai-realtime",
+      client_secret: clientSecret,
+    },
+  }),
+});
+const session = await resp.json(); // { session_id, token }
+```
+</CodeGroup>
+
+<Warning>
+Never expose `<AVATURN_API_KEY>` or `<OPENAI_API_KEY>` to the browser. Only the per-session `token` belongs there.
+</Warning>
+
+## 3. Connect from the frontend
+
+```bash
+npm install @avaturn-live/web-sdk
+```
+
+```typescript
+import { AvaturnHead } from "@avaturn-live/web-sdk";
+
+const root = document.querySelector<HTMLDivElement>("#avaturn-video")!;
+const avatar = new AvaturnHead(root, {
+  sessionToken: session.token,
+  audioSource: true,
+});
+
+await avatar.init();
+```
+
+The avatar joins the room, requests microphone access, and starts conversing. Speak into the mic — the avatar responds.
+
+## 4. Clean up
+
+```typescript
+await avatar.dispose();
+```
+
+`dispose()` tears down the local SDK state. The backend session expires shortly after the user disconnects (default 60s). To terminate immediately, call [`DELETE /api/v1/sessions/{id}`](/api-reference/terminate-session) from your backend.
+
+## Next steps
+
+<CardGroup cols={2}>
+  <Card title="OpenAI Realtime engine" icon="sliders" href="/howtos/openai_realtime_api">
+    Tools, custom prompts, turn detection, transcripts.
+  </Card>
+  <Card title="Cartesia engine" icon="waveform" href="/howtos/cartesia">
+    Drive the avatar from a Cartesia Line agent.
+  </Card>
+  <Card title="SDK methods" icon="lambda" href="/web-sdk/reference/methods">
+    Devices, mute, attach to a new DOM node.
+  </Card>
+  <Card title="SDK events" icon="atom" href="/web-sdk/reference/events">
+    Speech start/end, lifecycle, transcripts.
+  </Card>
+</CardGroup>

@@ -1,314 +1,174 @@
 ---
 title: 'Methods'
+description: 'Methods exposed by the AvaturnHead instance.'
 icon: 'lambda'
 ---
 
-## `init()`
+## Lifecycle
 
-The `init()` method initializes the session for working with the avatar and returns a promise that resolves once the avatar is ready for interaction.
+### `init()`
 
-**Why is this important?**
+Initializes the session and connects to the avatar room. Returns a Promise that resolves when the avatar's video track is ready, or rejects on failure. If `immediatelyJoin` is `true` (default), `init()` calls [`join()`](#join) automatically.
 
-The `init()` method starts the session initialization process and connects to the necessary resources for the avatar to function. This method is essential for preparing the avatar for interaction. Once the initialization process is successfully completed, the returned promise resolves, indicating that the avatar is ready to work.
-
-**Return Value:**
-The method returns a promise that resolves once the avatar is successfully initialized. If there is an error during initialization, the promise will be rejected.
-
-**Example usage**:
 ```javascript
 try {
-  await avatar.init()
-  console.log('Avatar is ready to work');
-} catch(e) {
-  console.error('Avatar initialization failed: ', e)
+  await avatar.init();
+} catch (e) {
+  console.error("Avatar init failed:", e);
 }
 ```
----
 
-## `task()`
-The `task()` method sends text for the avatar to speak and initiates its playback.
+### `join()`
 
-**Why is this important?**
+Connects to the avatar room. Called automatically by `init()` unless `immediatelyJoin: false`. Use this when you want manual control over the moment of connection.
 
-The `task()` method is used to assign a specific task to the avatar — to speak the provided text. Once this method is called, the avatar begins to speak the text using speech synthesis. It is the primary way for the avatar to interact with the user via voice.
-
-**Arguments:**
-<ParamField path="text" type="string" required>
-The text the avatar should speak.
+<ParamField path="opts.startAudioOff" type="boolean">
+Start with microphone muted. Defaults to the SDK config's `startAudioOff`.
 </ParamField>
 
-
-**When should you use `task()`?**
-- When you need the avatar to say a message or give instructions.
-- In cases where you need to deliver information to the user through the avatar’s voice interface.
-
-**Example usage**:
 ```javascript
-avatar.task('Hello, how can I assist you today?');
+const root = document.querySelector<HTMLDivElement>("#avaturn-video")!;
+const avatar = new AvaturnHead(root, { sessionToken, immediatelyJoin: false });
+await avatar.init();
+// ...user interaction...
+await avatar.join({ startAudioOff: false });
 ```
----
 
-## `cancelAllTasks()`
-The `cancelAllTasks()` method cancels the currently active task and clears the queue of all pending tasks.
+### `dispose()`
 
-**When should you use `cancelAllTasks()`?**
-- When you need the avatar to immediately stop speaking or processing any ongoing tasks
-- In cases where you need to remove all tasks waiting in the queue.
+Terminates local SDK state — destroys the Daily call object and aborts pending requests. Does **not** close the backend session directly; the backend session ends via `user_absent_timeout` (default 60s) or an explicit [`DELETE /api/v1/sessions/{id}`](/api-reference/terminate-session). Call this on unmount.
 
-**Example usage**:
 ```javascript
-avatar.cancelAllTasks();
+await avatar.dispose();
 ```
----
 
-# `changeVoice()`
-The `changeVoice()` method cancels all tasks and changes voice for subsequent tasks.
+### `attachDOMNode(node)`
 
-**When should you use `changeVoice()`?**
-- Use this method when you need the avatar to immediately stop speaking and switch to a different voice for subsequent tasks.
+Moves the avatar video into a different DOM element without re-initializing. Also use this when you constructed `AvaturnHead` without a DOM element and now want to render it. Takes effect after `init()` has resolved.
 
-**Example usage**:
-```javascript
-avatar.changeVoice({ engine: 'elevenlabs', voice_id: 'different_voice_id' });
-```
----
-
-## `attachDOMNode()`
-
-The `attachDOMNode()` method updates the HTML DOM element where the avatar is rendered. This allows you to dynamically change the rendering container without restarting or reinitializing the avatar.
-
-**When should you use `attachDOMNode()`?**
-- When you need to move the avatar to a different section of the page.
-- In cases where the current DOM element is no longer suitable for rendering (e.g., it is removed or hidden).
-
-**Arguments:**
 <ParamField path="node" type="HTMLElement" required>
-The new HTML element where the avatar should be rendered.
+New container for the avatar video.
 </ParamField>
 
-**Example usage**:
 ```javascript
-// Assume `avatar` is your SDK instance and `newContainer` is a valid HTML element
-const newContainer = document.getElementById('avatar-container');
-avatar.attachDOMNode(newContainer);
+avatar.attachDOMNode(document.getElementById("avatar-container")!);
 ```
----
 
-## `on()`
+## Events
 
+### `on(event, callback)` / `off(event, callback)`
 
-The `on()` method are used to manage event subscriptions related to the avatar.
+Subscribe to or unsubscribe from SDK events. See [Events](/web-sdk/reference/events) for the full list.
 
-- `on(event, callback)`: Subscribes to an event, triggering the specified callback function each time the event occurs.
-
-**Why is this important?**
-
-The `on()` method allows you to track various events related to the avatar, such as the start and end of speech playback, state changes, or errors. This enables you to interact with the avatar in real time, responding to its actions efficiently.
-
-**When should you use `on()`?**
-- Use `on()` to subscribe to events and respond to changes in the avatar’s behavior, such as speech completion, successfull initialization, and more.
-
-**Arguments:**
 <ParamField path="event" type="string" required>
-The name of the event to subscribe or unsubscribe from.
+Event name.
 </ParamField>
 <ParamField path="callback" type="function" required>
-The function that will be called when the event occurs.
+Handler invoked when the event fires.
 </ParamField>
 
-**Example usage:**:
 ```javascript
-function handleInit() {
-  console.log('Avatar successfully inited');
-}
-avatar.on('init', handleInit);
-```
-<sub>For more information about available events and their descriptions, see the [events](/web-sdk/reference/events) section.</sub>
+function onInit() { console.log("avatar ready"); }
 
----
-
-## `off()`
-The `off()` method are used to manage event subscriptions related to the avatar.
-
-- `off(event, callback)`: Unsubscribes from the event, removing the previously registered callback function.
-
-**Why is this important?**
-
-The `off()` method is used to unsubscribe from events when tracking them is no longer necessary, preventing unnecessary callback calls and improving performance.
-
-**When should you use `off()`?**
-- Use `off()` to remove subscriptions when you no longer need to track an event.
-
-**Arguments:**
-<ParamField path="event" type="string" required>
-The name of the event to subscribe or unsubscribe from.
-</ParamField>
-<ParamField path="callback" type="function" required>
-The function that will be called when the event occurs.
-</ParamField>
-
-**Example usage:**:
-```javascript
-function handleInit() {
-  console.log('Avatar successfully inited');
-}
-avatar.off('init', handleInit);
-```
-<sub>For more information about available events and their descriptions, see the [events](/web-sdk/reference/events) section.</sub>
-
-## `dispose()`
-
-The `dispose()` method terminates the current session and releases all resources associated with the avatar.
-
-**Why is this important?**
-
-The `dispose()` method is used to cleanly end the avatar session and free up resources that were allocated for its operation. This method is essential for managing memory and ensuring that resources are properly released when the avatar is no longer needed or when you want to reset the session.
-
-**When should you use `dispose()`?**
-- When you want to end the avatar session and ensure that all related resources are freed.
-- Before reinitializing the avatar or creating a new session to avoid potential conflicts or memory leaks.
-- When the avatar is no longer needed in your application and you want to perform a cleanup.
-
-**Example usage**:
-```javascript
-await avatar.dispose()
+avatar.on("init", onInit);
+avatar.off("init", onInit);
 ```
 
-**Return Value:**
-The method returns a promise that resolves once the disposal process is complete.
+## Media devices
 
-_Ensure that you call `dispose()` when you are finished using the avatar to maintain optimal performance and resource management._
+### `requestMediaDevices()`
 
----
+Returns the list of available media devices (microphones, speakers, cameras).
 
-## `toggleLocalAudio()`
+```javascript
+const { devices } = await avatar.requestMediaDevices();
+const microphones = devices.filter(d => d.kind === "audioinput");
+```
 
-The `toggleLocalAudio()` method toggles or sets the user's microphone state.
+### `setInputDevices({ audioDeviceId?, videoDeviceId? })`
 
-**Why is this important?**
+Selects input devices for the session. Pass only the keys you want to change — both fields are optional at runtime. Use `false` or `null` to disable a device.
 
-This method allows you to control whether the user's microphone is active or muted. You can either toggle the current state or set a specific state by providing a boolean value.
-
-**Arguments:**
-<ParamField path="value" type="boolean" optional>
-Optional boolean value to set the microphone state. If not provided, the current state will be toggled.
+<ParamField path="audioDeviceId" type="string | false | null">
+Microphone device id from `requestMediaDevices()`.
+</ParamField>
+<ParamField path="videoDeviceId" type="string | false | null">
+Camera device id. Most integrations leave this unset — the avatar's video comes from the server, not the user's camera.
 </ParamField>
 
-**When should you use `toggleLocalAudio()`?**
-- When you need to programmatically mute or unmute the user's microphone.
-- To provide microphone control functionality in your UI.
-
-**Example usage**:
 ```javascript
-// Toggle current microphone state
-avatar.toggleLocalAudio();
+await avatar.setInputDevices({ audioDeviceId: "microphone-id-123" });
+```
 
-// Set microphone to active
-avatar.toggleLocalAudio(true);
+Returns [`DailyDeviceInfos`](https://docs.daily.co/reference/daily-js/instance-methods/set-input-devices-async) from the underlying transport.
 
-// Set microphone to muted
-avatar.toggleLocalAudio(false);
+### `setOutputDevice({ outputDeviceId })`
+
+Selects the speaker for avatar audio output. Always pass `outputDeviceId`.
+
+<ParamField path="outputDeviceId" type="string" required>
+Device id from `requestMediaDevices()`.
+</ParamField>
+
+```javascript
+await avatar.setOutputDevice({ outputDeviceId: "speaker-id-123" });
+```
+
+<Note>
+If `outputDeviceId` is omitted, the SDK silently returns the list of input devices instead of switching output. Always pass `outputDeviceId` explicitly.
+</Note>
+
+Returns [`DailyDeviceInfos`](https://docs.daily.co/reference/daily-js/instance-methods/set-input-devices-async).
+
+### `toggleLocalAudio(value?)`
+
+Mutes or unmutes the user's microphone. With no argument, toggles the current state.
+
+<ParamField path="value" type="boolean">
+`true` = unmute, `false` = mute.
+</ParamField>
+
+```javascript
+avatar.toggleLocalAudio();      // toggle
+avatar.toggleLocalAudio(false); // mute
 ```
 
 ---
 
-## `setOutputDevice()`
+## Legacy: text-echo
 
-The `setOutputDevice()` method sets the audio output device for the avatar.
+<Warning>
+**Legacy.** These methods belong to the [text-echo flow](/legacy/text-echo). New integrations should drive speech through a [conversation engine](/howtos/openai_realtime_api) instead.
+</Warning>
 
-**Why is this important?**
+### `task(text)`
 
-This method allows you to specify which audio device should be used for playing the avatar's voice output, enabling users to choose their preferred speakers or headphones.
+Sends text for the avatar to speak. If the avatar is already speaking, the fragment is queued. Returns `{ task_id: string }`.
 
-**Arguments:**
-<ParamField path="device" type="object" required>
-Device configuration object containing the output device ID.
-</ParamField>
-<ParamField path="device.outputDeviceId" type="string" optional>
-The ID of the audio output device to use.
+<ParamField path="text" type="string" required>
+The text to speak.
 </ParamField>
 
-**When should you use `setOutputDevice()`?**
-- When you want to allow users to select their preferred audio output device.
-- To ensure avatar audio plays through the correct speakers or headphones.
-
-**Example usage**:
 ```javascript
-// Set specific output device
-await avatar.setOutputDevice({ outputDeviceId: 'device-id-123' });
+const { task_id } = await avatar.task("Hello, world!");
 ```
 
-**Return Value:**
-The method returns a promise that resolves when the output device is successfully set.
+### `cancelAllTasks()`
 
----
+Stops the current utterance and clears the queue.
 
-## `setInputDevices()`
+```javascript
+await avatar.cancelAllTasks();
+```
 
-The `setInputDevices()` method configures the audio and video input devices for the session.
+### `changeVoice(config)`
 
-**Why is this important?**
+Switches the text-echo TTS voice for subsequent `task()` calls. Patches the session's conversation engine config to a new `text-echo` config with the supplied TTS.
 
-This method allows you to specify which microphone and camera should be used for the avatar session, enabling users to choose their preferred input devices.
-
-**Arguments:**
-<ParamField path="devices" type="object" required>
-Device configuration object containing input device settings.
-</ParamField>
-<ParamField path="devices.audioDeviceId" type="string | false | null" optional>
-The ID of the audio input device (microphone) to use. Set to false or null to disable audio input.
+<ParamField path="config" type="TTSConfig" required>
+`{ engine: "elevenlabs", voice_id: string }`. Only `elevenlabs` is currently accepted by the backend.
 </ParamField>
 
-**When should you use `setInputDevices()`?**
-- When you want to allow users to select their preferred microphone or camera.
-- To configure specific input devices for the avatar session.
-
-**Example usage**:
 ```javascript
-// Set specific input devices
-const result = await avatar.setInputDevices({
-  audioDeviceId: 'microphone-id-123',
-});
-
-// Disable audio input
-await avatar.setInputDevices({ audioDeviceId: false });
+await avatar.changeVoice({ engine: "elevenlabs", voice_id: "voice_id_123" });
 ```
-
-**Return Value:**
-The method returns a promise that resolves with device information of type
-```javascript
-{
-  mic: {} | MediaDeviceInfo;
-  speaker: {} | MediaDeviceInfo;
-}
-```
-
----
-
-## `requestMediaDevices()`
-
-The `requestMediaDevices()` method retrieves a list of available media devices (microphones, cameras, speakers).
-
-**Why is this important?**
-
-This method allows you to enumerate all available media devices on the user's system, which is essential for providing device selection options in your application.
-
-**When should you use `requestMediaDevices()`?**
-- When you need to show users a list of available microphones, cameras, or speakers.
-- Before calling `setInputDevices()` or `setOutputDevice()` to ensure the device ID is valid.
-
-**Example usage**:
-```javascript
-// Get list of available devices
-const deviceList = await avatar.requestMediaDevices();
-console.log('Available devices:', deviceList.devices);
-
-// Filter microphones
-const microphones = deviceList.devices.filter(device => device.kind === 'audioinput');
-```
-
-**Return Value:**
-The method returns a promise that resolves with an object containing:
-- `devices`: Array of `MediaDeviceInfo` objects representing available media devices.
-
----

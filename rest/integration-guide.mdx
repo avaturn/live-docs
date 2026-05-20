@@ -1,26 +1,27 @@
 ---
-title: 'Integration Guide'
-description: 'This guide provided a step-by-step approach to integrate API in your backend'
+title: 'REST Integration Guide'
+description: 'Session lifecycle from your backend.'
 icon: 'instalod'
 ---
 
 <Warning>
-  This API must be used in the backend.
-  You do not want to use your API Key on the frontend since it can be stolen there.
+Run the REST API from your backend. Avaturn API keys exposed in the browser can be stolen and used to act on your behalf.
 </Warning>
 
-## Session Initialization
+## Session lifecycle
 
--
-  [Create a session](/api-reference/endpoint/create-session) using your `API Key` and receive a session `token`.
-  Think of sessions like meeting rooms with avatars.
-  You can connect to such a room and control what an avatar says.
--
-  Send received session `token` to frontend and use [Web SDK](/web-sdk).
--
-  If you want to control what the avatar is saying from the backend,
-  [Request the avatar to say something](/api-reference/endpoint/request-speech).
-  Nothing is said until you connect to the room (or while you're disconnected).
--
-  [Terminate the session](/api-reference/endpoint/terminate-session).
-  A session is terminated automatically after N [SET THE NUMBER] minutes of inactivity.
+<Steps>
+  <Step title="Create a session">
+    [`POST /api/v1/sessions`](/api-reference/create-session) with a [conversation engine](/howtos/openai_realtime_api) config. Response contains `session_id` (backend) and `token` (frontend).
+  </Step>
+  <Step title="Hand the token to the frontend">
+    The `token` is the only credential the browser needs. The [Web SDK](/web-sdk/integration-guide) uses it to join the avatar room over WebRTC.
+  </Step>
+  <Step title="Terminate the session">
+    [`DELETE /api/v1/sessions/{id}`](/api-reference/terminate-session) when you're done, or rely on auto-termination (`user_absent_timeout` / `max_duration`).
+  </Step>
+</Steps>
+
+A working end-to-end snippet lives in [Example](/rest/example).
+
+For backend-driven scripted speech (no STT), see [Legacy text-echo](/legacy/text-echo).

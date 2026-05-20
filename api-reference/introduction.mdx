@@ -1,21 +1,29 @@
 ---
-title: 'Introduction'
-description: 'Overview of API'
+title: "API Reference"
+description: "Create, manage, and terminate avatar sessions from your backend."
 ---
 
-## Overview
+The Avaturn.Live API manages session lifecycle. Create a session with a [conversation engine](/howtos/openai_realtime_api) config; receive a `session_id` (backend handle) and a `token` (frontend credential).
 
-This API allows you to create and delete sessions.
-We expect you to use our [Web SDK](/web-sdk) to control avatar speech from frontend.
-However, you can use this API to control avatar speech from your backend as well.
+## Authentication
 
-## Authorization
-
-Uou need to provide the `Bearer` header, which can be obtained in the dashboard.
-`API Key` **must be used in the backend** and never in the frontend.
+All endpoints require an `Authorization: Bearer <API_KEY>` header. API keys are issued in the [dashboard](https://avaturn.live/dashboard).
 
 <Warning>
-  Keep the API Key secret and safe.
-  Anyone with access to your API Key can make API requests on your behalf.
-  If you suspect that your token has been compromised, you should immediately revoke the token in the dashboard.
+API keys must stay on the backend. Anyone with the key can act on your behalf — rotate immediately in the dashboard if compromised.
 </Warning>
+
+## Base URL
+
+```
+https://api.avaturn.live
+```
+
+## Errors
+
+Endpoint-specific error codes are listed in each operation's reference page. Common patterns:
+
+- `400 Bad Request` — invalid payload (e.g. unknown `voice_id`, invalid `render_model` for the chosen avatar).
+- `401 Unauthorized` — missing or revoked API key.
+- `410 Gone` — `avatar_id` no longer exists.
+- `422 Unprocessable Content` — missing required engine field (e.g. `client_secret` for `openai-realtime`).

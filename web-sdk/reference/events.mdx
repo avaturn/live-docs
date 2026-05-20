@@ -1,92 +1,161 @@
 ---
 title: 'Events'
-description: 'You can pass a properties object that configures the AvaturnHead object.'
+description: 'Events emitted by the AvaturnHead instance.'
 icon: 'atom'
 ---
 
-The SDK provides various events related to the avatar's operations, allowing you to track its state and actions. You can use these events with the `on()` and `off()` methods to subscribe to and manage interactions with the avatar.
+Subscribe with [`on(event, callback)`](/web-sdk/reference/methods#on-event-callback-off-event-callback) and unsubscribe with `off(event, callback)`.
 
-#### Avatar speech events
+The SDK forwards events from two sources:
+- **Avatar / engine events** sent by the Avaturn backend over the underlying transport (avatar speech, transcripts, errors).
+- **Client lifecycle events** emitted locally by the SDK (`init`, `idle`, microphone state).
 
-These events track the start and end of the avatar's speech, as well as specific phrases it speaks.
+## Avatar speech
 
-- **`avatar_started_speaking`**  
-  This event is triggered when the avatar begins speaking.  
+### `avatar_started_speaking`
 
-- **`avatar_ended_speaking`**  
-  This event is triggered when the avatar finishes speaking.  
+Fired when the avatar starts speaking.
 
-- **`avatar_started_speaking_phrase`**  
-  This event is triggered when the avatar starts speaking a specific phrase.  
-  **Callback data**:  
-  ```javascript
-  {
-    phrase_id: string;  // Unique identifier of the phrase
-    type: "avatar_started_speaking_phrase";
-  }
-  ```
-
-- **`avatar_ended_speaking_phrase`**  
-  This event is triggered when the avatar finishes speaking a phrase.  
-  **Callback data**:  
-  ```javascript
-  {
-    phrase_id: string;  // Unique identifier of the phrase
-    type: "avatar_ended_speaking_phrase";
-  }
-  ```
-
-#### SDK events
-
-These events manage the session state and avatar activity.
-
-- **`init`**  
-  Triggered when the avatar is initialized and the session is successfully started.  
-  Does not pass additional data to the callback.
-
-- **`task`**  
-  Triggered when the avatar starts performing a task, such as speaking text via the [task()](/web-sdk/reference/methods#task) method.  
-  Does not pass additional data to the callback.
-
-- **`dispose`**  
-  Triggered when the avatar session ends or the avatar is disposed of.  
-  Does not pass additional data to the callback.
-
-- **`idle`**  
-  Triggered when the avatar goes into an idle or inactive state.  
-  Does not pass additional data to the callback.
-
-- **`local_audio_change`**  
-  Triggered when the user turns their microphone on or off.  
-  **Callback data**:  
-  ```javascript
-    localAudio: boolean  // true - microphone is active, false - microphone is muted
-  ```
-
-- **`local_mic_state_change`**  
-  Triggered when the user's microphone permission state changes.  
-  **Callback data**:  
-  ```javascript
-    state: 'blocked' | 'off' | 'sendable' | 'loading' | 'interrupted' | 'playable';  // Current microphone state
-  ```
----
-
-### Example Usage
-
-Here’s an example of using the events with `on()` and `off()` methods:
-
-```javascript
-function handlePhraseEnd(data) {
-  console.log('Avatar ended phrase with ID:', data.phrase_id);
-}
-
-sdk.on('avatar_ended_speaking_phrase', handlePhraseEnd);
-
-// additional code...
-
-sdk.off('avatar_ended_speaking_phrase', handlePhraseEnd);
+```typescript
+{ type: "avatar_started_speaking", phrase_id: string }
 ```
 
----
+### `avatar_ended_speaking`
 
+Fired when the avatar finishes the current utterance.
 
+```typescript
+{ type: "avatar_ended_speaking" }
+```
+
+### `avatar_started_speaking_phrase`
+
+Fired when the avatar starts a specific queued phrase. Use this when you need to track individual phrases (e.g. for captioning).
+
+```typescript
+{ type: "avatar_started_speaking_phrase", phrase_id: string }
+```
+
+### `avatar_ended_speaking_phrase`
+
+Fired when the avatar finishes a phrase.
+
+```typescript
+{ type: "avatar_ended_speaking_phrase", phrase_id: string }
+```
+
+## Transcripts
+
+Emitted by the [OpenAI Realtime engine](/howtos/openai_realtime_api). Not emitted by the [Cartesia engine](/howtos/cartesia).
+
+<Note>
+**User-input transcripts require configuration.** Set `audio.input.transcription.model` in the OpenAI session config (e.g. `"whisper-1"`); without it the input transcript event never fires. Assistant transcripts flow by default.
+</Note>
+
+### `ce_events.realtime.input_transcript`
+
+User speech transcription.
+
+```typescript
+{
+  type: "ce_events.realtime.input_transcript",
+  transcript: string,
+  timestamp: number // unix seconds
+}
+```
+
+### `ce_events.realtime.response_transcript`
+
+Avatar (assistant) speech transcription.
+
+```typescript
+{
+  type: "ce_events.realtime.response_transcript",
+  transcript: string,
+  timestamp: number // unix seconds
+}
+```
+
+## Client lifecycle
+
+Emitted by the SDK locally.
+
+### `init`
+
+Fired when the avatar video track is ready. The promise returned by [`init()`](/web-sdk/reference/methods#init) resolves on this event.
+
+### `idle`
+
+Fired after 5 minutes without a backend message or [`task()`](/web-sdk/reference/methods#task-text) call. If [`keepAlive`](/web-sdk/reference/properties#keepalive) is `false`, the SDK also tears down its local state right after the event fires.
+
+<Note>
+The `idle` event bypasses the [`event`](#event) catch-all. Subscribe to `idle` directly if you need to react to it.
+</Note>
+
+## Errors
+
+### `error`
+
+Fired when the backend reports a lifecycle failure. Payload structure:
+
+```typescript
+{
+  type: "error",
+  error: {
+    type: "session_lifecycle_error",
+    code: "internal_error" | "limits_exceeded" | "openai-realtime-version-mismatch",
+    message: string,
+    session_id: string
+  }
+}
+```
+
+- `openai-realtime-version-mismatch` — your OpenAI session config mixes beta and GA-only features. Use GA-only ([beta-to-GA migration](https://platform.openai.com/docs/guides/realtime#beta-to-ga-migration)).
+- `limits_exceeded` — workspace quota reached.
+- `internal_error` — generic server-side failure; check `message` for details.
+
+## Microphone
+
+### `local_audio_change`
+
+Fired when the user's microphone mute state changes. Callback receives a `boolean` directly (`true` = unmuted, `false` = muted).
+
+```typescript
+avatar.on("local_audio_change", (active: boolean) => {
+  // ...
+});
+```
+
+### `local_mic_state_change`
+
+Fired when the microphone permission or device state changes. Callback receives a state string from Daily's [`DailyTrackState['state']`](https://docs.daily.co/reference/daily-js/types/daily-track-state) union (e.g. `"blocked"`, `"off"`, `"sendable"`, `"loading"`, `"interrupted"`, `"playable"`, `"receivable"`).
+
+```typescript
+avatar.on("local_mic_state_change", (state) => {
+  // ...
+});
+```
+
+## Catch-all
+
+### `event`
+
+Fires alongside every other event **except** [`idle`](#idle). Useful for logging or debugging.
+
+```typescript
+avatar.on("event", ({ event, value }) => {
+  console.log(event, value);
+});
+```
+
+## Example
+
+```typescript
+function onPhraseEnd({ phrase_id }: { phrase_id: string }) {
+  console.log("phrase done:", phrase_id);
+}
+
+avatar.on("avatar_ended_speaking_phrase", onPhraseEnd);
+// later
+avatar.off("avatar_ended_speaking_phrase", onPhraseEnd);
+```

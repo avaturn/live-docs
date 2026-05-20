@@ -1,0 +1,189 @@
+---
+title: "Cartesia conversation engine"
+description: "Connect an Avaturn avatar to a deployed Cartesia Line agent."
+---
+
+## When to use
+
+- Your conversational agent runs on [Cartesia Line](https://docs.cartesia.ai/line).
+- Prompts, tools, voice, and the LLM live inside your Cartesia agent — not in the Avaturn session payload.
+- You want natural barge-in detected server-side.
+
+For inline per-session config of prompts/voice/VAD, see [OpenAI Realtime](/howtos/openai_realtime_api).
+
+## Prerequisites
+
+- **Deployed Cartesia Line agent** and its `agent_id` ([quickstart](https://docs.cartesia.ai/line/start-building/quickstart))
+- **Cartesia API key** (`sk_car_...`)
+- **Avaturn API key** ([dashboard](https://avaturn.live/dashboard))
+
+## 1. Mint a Cartesia access token
+
+Cartesia Line uses short-lived access tokens for agent connections. Mint server-side from your Cartesia API key — a few minutes is enough.
+
+<CodeGroup>
+```python Python
+import httpx
+
+async with httpx.AsyncClient(timeout=10.0) as http:
+    r = await http.post(
+        "https://api.cartesia.ai/access-token",
+        headers={
+            "Authorization": "Bearer <CARTESIA_API_KEY>",
+            "Cartesia-Version": "2025-04-16",
+        },
+        json={"grants": {"agent": True}, "expires_in": 300},
+    )
+    r.raise_for_status()
+    access_token = r.json()["token"]
+```
+
+```javascript Node.js
+const r = await fetch("https://api.cartesia.ai/access-token", {
+  method: "POST",
+  headers: {
+    Authorization: "Bearer <CARTESIA_API_KEY>",
+    "Cartesia-Version": "2025-04-16",
+    "Content-Type": "application/json",
+  },
+  body: JSON.stringify({ grants: { agent: true }, expires_in: 300 }),
+});
+if (!r.ok) throw new Error(`Cartesia token: ${r.status}`);
+const { token: accessToken } = await r.json();
+```
+
+```bash cURL
+curl https://api.cartesia.ai/access-token \
+  -H "Authorization: Bearer <CARTESIA_API_KEY>" \
+  -H "Cartesia-Version: 2025-04-16" \
+  -H "Content-Type: application/json" \
+  -d '{ "grants": { "agent": true }, "expires_in": 300 }'
+```
+</CodeGroup>
+
+Mint per session. Don't cache. See the [Cartesia authentication guide](https://docs.cartesia.ai/get-started/authenticate-your-client-applications) for scopes.
+
+## 2. Create the Avaturn session
+
+<CodeGroup>
+```python Python
+import httpx
+
+async with httpx.AsyncClient() as http:
+    r = await http.post(
+        "https://api.avaturn.live/api/v1/sessions",
+        headers={"Authorization": "Bearer <AVATURN_API_KEY>"},
+        json={
+            "conversation_engine": {
+                "type": "cartesia",
+                "access_token": access_token,
+                "agent_id": "<your-agent-id>",
+            },
+        },
+    )
+    r.raise_for_status()
+    session = r.json()  # { "session_id": "...", "token": "..." }
+```
+
+```javascript Node.js
+const r = await fetch("https://api.avaturn.live/api/v1/sessions", {
+  method: "POST",
+  headers: {
+    Authorization: "Bearer <AVATURN_API_KEY>",
+    "Content-Type": "application/json",
+  },
+  body: JSON.stringify({
+    conversation_engine: {
+      type: "cartesia",
+      access_token: accessToken,
+      agent_id: "<your-agent-id>",
+    },
+  }),
+});
+const session = await r.json(); // { session_id, token }
+```
+
+```bash cURL
+curl -X POST https://api.avaturn.live/api/v1/sessions \
+  -H "Authorization: Bearer <AVATURN_API_KEY>" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "conversation_engine": {
+      "type": "cartesia",
+      "access_token": "eyJhbGciOi...",
+      "agent_id": "<your-agent-id>"
+    }
+  }'
+```
+</CodeGroup>
+
+Response:
+- `session_id` — backend handle
+- `token` — short-lived credential for the Web SDK
+
+Optional session fields: `avatar_id`, `background`, `render_model` (avatar render preset, **not** the LLM), `user_absent_timeout` (default 60s, min 10), `max_duration` (default 3600s, max 86400).
+
+## 3. Connect from the frontend
+
+```typescript
+import { AvaturnHead } from "@avaturn-live/web-sdk";
+
+const root = document.querySelector<HTMLDivElement>("#avaturn-video")!;
+const avatar = new AvaturnHead(root, {
+  sessionToken: session.token,
+  audioSource: true, // required — engine is voice-to-voice
+});
+
+await avatar.init();
+```
+
+## Configuring the agent
+
+Cartesia Line is a deployed agent platform: prompts, tools, voice, and the LLM live in your Cartesia agent. To change agent behavior, update and redeploy in Cartesia.
+
+- [Line SDK overview](https://docs.cartesia.ai/line/sdk/overview)
+- [Building Line agents](https://docs.cartesia.ai/line/sdk/agents)
+- [Deploying Line agents](https://docs.cartesia.ai/line/infrastructure/deployments)
+
+<Info>
+**No per-session variables.** The Avaturn payload accepts only `agent_id` and `access_token`. There's no `variables`, `context`, or `metadata` pass-through. For per-user variation, deploy multiple agents and select the right `agent_id` at session creation.
+</Info>
+
+## Engine behavior
+
+- **Audio.** Avaturn streams the user's microphone to Cartesia as 24 kHz base64-encoded PCM, matching the [Cartesia Calls API](https://docs.cartesia.ai/line/integrations/calls-api) input format.
+- **Interruptions.** Cartesia detects barge-in server-side and emits a `clear` signal; Avaturn drops in-flight avatar audio so the next response starts cleanly.
+- **No turn boundaries.** Cartesia doesn't emit explicit turn-start / turn-end markers. Avaturn opens a new segment on the first audio chunk and closes it on buffer drain or `clear`.
+- **Tools and LLM.** Both execute inside Cartesia's runtime — Avaturn doesn't observe or proxy them. Configure tools in your Cartesia agent.
+- **Transcripts.** Cartesia transcripts are not forwarded to the Web SDK. If you need transcripts in your app, capture them inside the Cartesia agent and ship via your own backend.
+- **Text input is not played.** The Avaturn `POST /sessions/{id}/tasks` endpoint accepts the request and returns a `task_id`, but the Cartesia engine ignores text-echo commands — the avatar is driven by user voice and your agent logic only.
+- **Call transfer is not supported.** If your agent emits a `transfer_call` action, Avaturn logs a warning and ignores it. The avatar continues in the existing session.
+- **Server-initiated end.** If your agent invokes the [`end_call`](https://docs.cartesia.ai/line/sdk/agents) tool (or otherwise ends the conversation), Cartesia closes the WebSocket gracefully and the Avaturn session ends as a normal termination.
+
+## Session lifecycle
+
+A session ends on any of:
+
+- Explicit `DELETE /api/v1/sessions/{session_id}`
+- Your Cartesia agent ending the call (e.g. via the `end_call` tool)
+- `user_absent_timeout` elapses with the user disconnected (default 60s)
+- `max_duration` cap reached (default 3600s, max 86400s)
+
+```python
+async with httpx.AsyncClient() as http:
+    await http.delete(
+        f"https://api.avaturn.live/api/v1/sessions/{session_id}",
+        headers={"Authorization": "Bearer <AVATURN_API_KEY>"},
+    )
+```
+
+Call `avatar.dispose()` on the frontend to tear down the local SDK state. The backend session terminates as described above — `dispose()` does not directly close it.
+
+## Reference
+
+- [Cartesia Line quickstart](https://docs.cartesia.ai/line/start-building/quickstart)
+- [Cartesia Calls API](https://docs.cartesia.ai/line/integrations/calls-api)
+- [Cartesia authentication guide](https://docs.cartesia.ai/get-started/authenticate-your-client-applications)
+- [Web SDK integration guide](/web-sdk/integration-guide)
+- [Web SDK events](/web-sdk/reference/events)
+- [Avaturn API reference](/api-reference/introduction)
