@@ -24,7 +24,8 @@
             "group": "Conversation Engines",
             "pages": [
               "howtos/openai_realtime_api",
-              "howtos/cartesia"
+              "howtos/cartesia",
+              "howtos/external"
             ]
           },
           {

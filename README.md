@@ -4,17 +4,12 @@ Mintlify-powered documentation for [Avaturn.Live](https://avaturn.live).
 
 ## Development
 
-Install the [Mintlify CLI](https://www.npmjs.com/package/mint):
+```
+bun install
+bun --bun run dev
+```
 
-```
-npm i -g mint
-```
-
-Preview locally from the repo root (where `docs.json` lives):
-
-```
-mint dev
-```
+Preview on <http://localhost:3000>. The `--bun` flag is required — `mint` refuses Node ≥ 25 and Bun reports a compatible `process.version`.
 
 ## Publishing
 
@@ -26,5 +21,4 @@ Doc accuracy / completeness reports are stored under [`audits/`](./audits) and v
 
 ## Troubleshooting
 
-- `mint dev` fails — run `mint install` to reinstall deps.
 - 404 on every page — confirm you're running from the folder containing `docs.json`.
